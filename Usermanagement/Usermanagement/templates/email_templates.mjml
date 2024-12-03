@@ -1,0 +1,39 @@
+{% comment %} {% load mjml %}
+
+{% mjml %}
+<mjml>
+  <mj-body>
+    <mj-section>
+      <mj-column>
+        <mj-text font-size="20px" color="#F45E43" font-family="helvetica">Hello World</mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>
+{% endmjml %} {% endcomment %}
+
+<mjml>
+  <mj-body>
+    <mj-section>
+      <mj-column>
+        <mj-text font-size="32px" font-family="Helvetica" color="#000000">
+          {{ subject }}
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section>
+      <mj-column>
+        <mj-text font-size="16px" font-family="Helvetica" color="#000000">
+          {{ message }}
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section>
+      <mj-column>
+        <mj-button href="https://example.com">
+          Get Started
+        </mj-button>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

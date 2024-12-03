@@ -1,0 +1,6 @@
+SENT USING TEXT MOBILE
+https://2factor.in/v3/?at_category=2factor&at_event_action=spr&service=Free_SMS%2C_Free_Bulk_SMS%2C_Free_SMS_without_registration%2C_Send_Free_SMS_online%2C_free_SMS_to_india%2C_Send_free_SMS_without_registration
+
+Medium
+https://medium.com/@shaikhrayyan123/login-with-otp-authentication-in-django-and-django-rest-framework-242bede750e1
+
