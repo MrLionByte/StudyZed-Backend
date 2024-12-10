@@ -6,9 +6,9 @@ services:
     volumes:
       - ./data/db:/var/lib/postgresql/data
     environment:
-      - POSTGRES_DB= usermanagement_studyzed
-      - POSTGRES_USER= fmn
-      - POSTGRES_PASSWORD= mrlionbyte
+      - POSTGRES_DB=usermanagement_studyzed
+      - POSTGRES_USER=fmn
+      - POSTGRES_PASSWORD=mrlionbyte
     ports:
       - "5435:5432"
   

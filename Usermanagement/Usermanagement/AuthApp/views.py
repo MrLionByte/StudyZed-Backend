@@ -1,26 +1,41 @@
 from django.shortcuts import render
-from .models import UserAddon
+from .models import Email_temporary, UserAddon
 from rest_framework.response import Response
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from .serializers import UserSerializer, OTPVerificationSerializer, EmailVerificationSerializer, PasswordResetSerializer
+from .serializers import (UserSerializer, OTPVerificationSerializer, 
+                          EmailVerificationSerializer, PasswordResetSerializer, CustomTokenObtainPairSerializer)
 from rest_framework.views import APIView
 from .mails import send_verification_email
 from django.utils.timezone import now
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.sessions.models import Session
+
 # Create your views here.
+
+## USER SIGN-UP EMAIL {
 
 class SignupEmailProcedureView(generics.CreateAPIView):
     
     permission_classes = [AllowAny]
     serializer_class = EmailVerificationSerializer
     def post(self, request):
+        print("WORKING 111")
+        # print(f"Session keys: {request.session.keys()}")
+        # print("REQUEST :" ,request)
+        # print("REQUEST :" ,request.data)
+        # print(f"Session ID: {request.session.session_key}")  
+        temp_mail = request.data['email']
+        if Email_temporary.objects.filter(email=temp_mail).exists():
+            Email_temporary.objects.filter(email=temp_mail).delete()
         serializer = self.get_serializer(data=request.data)
+        print(serializer)
         try :
             
             if not serializer.is_valid():
@@ -28,14 +43,18 @@ class SignupEmailProcedureView(generics.CreateAPIView):
                     {"error": "Invalid data", "details": serializer.errors},
                     status=status.HTTP_400_BAD_REQUEST
                 )
+                
             email = serializer.validated_data["email"]
+            print("WORKING 122", email)
             email_status = send_verification_email(email)
-            print(f"EMAIL STATUS : {email_status}")
+
             if not email_status["success"]:
-                     return Response(
+                    print("WORKING 133")
+                    return Response(
                          {"error": email_status["message"]},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR
                         )
+ 
             request.session['validationsteps'] = {
                         'email': email,
                         'otp' : email_status['otp'],
@@ -43,63 +62,125 @@ class SignupEmailProcedureView(generics.CreateAPIView):
                         'created_at': email_status['created_at'].isoformat(),
                         'expires_at': email_status['expires_at'].isoformat(),
                     }
-            print(f"DATA IN SESSION : {request.session['validationsteps']}")
-            return Response ({"message":"Email is valid and ready for OTP"}, status=status.HTTP_200_OK)
+            print("WORKING 144", request.session['validationsteps'])
+            # print(f"DATA IN SESSION : {request.session['validationsteps']}")
+            # print(f"Session keys: {request.session.keys()}")
+            # print(f"Session ID: {request.session.session_key}") 
+            
+            new = Email_temporary.objects.create(email=email, otp=email_status["otp"],expires_at=email_status['expires_at'])
+            print("TEMP :",new)
+            print("WORKING 1555")
+            return Response ( {
+                "message": "Email verification failed",
+                "auth-status": "success",
+                },status=status.HTTP_200_OK)
         except Exception as e :
-            return Response(
-                        {"error": f"Faied to validate Email:, {e}"},
-                    )
-    
+            print("Error details: ", e)
+            return Response ({
+                "message": f"Email verification failed {e}",
+                "auth-status": "failure"
+                },status= status.HTTP_400_BAD_REQUEST)
 
+## USER SIGN-UP EMAIL }
+
+
+## USER SIGN-UP OTP VERIFICATION {
+    
+@method_decorator(csrf_exempt, name='dispatch')
 class SignupOTPVerificationView(generics.CreateAPIView):
     permission_classes = [AllowAny]
     serializer_class = OTPVerificationSerializer
     def post(self, request):
-        request.session["validationsteps"]['no_of_try'] = int(request.session["validationsteps"].get('no_of_try')) + 1
-        request.session.modified = True
-        print(f"DATA IN SESSION AFTER TRY : {request.session['validationsteps']}")
+
+        # print(f"DATA IN SESSION AFTER TRY : {request.session['validationsteps']}")
+        # request.session["validationsteps"]['no_of_try'] = int(request.session["validationsteps"].get('no_of_try')) + 1
+        # request.session.modified = True
+        # print(f"DATA IN SESSION AFTER TRY : {request.session['validationsteps']}")
         serializer = self.get_serializer(data=request.data)
         try:
-            if request.session["validationsteps"]['no_of_try'] > 5:
+            user_under_verification = Email_temporary.objects.get(
+                email=request.data['email']);
+            print("user_under_verification :", user_under_verification)
+            user_under_verification.no_of_try += 1
+            user_under_verification.save()
+            # if request.session["validationsteps"]['no_of_try'] > 5:
+            if user_under_verification.no_of_try > 5:
                 return Response(
                         {"error": "Maximum tries exceeded."},
                         status=status.HTTP_429_TOO_MANY_REQUESTS
                     )
             if not serializer.is_valid():
+                print("Error",serializer.errors)
                 return Response(
                     {"error": "Invalid data", "details": serializer.errors},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            print(request.session['validationsteps'])
+            # print(request.session['validationsteps'])
+            user_under_verification.is_authenticated = True
+            user_under_verification.save()
             return Response(
-                {"message": "OTP verified successfully. Email is confirmed."},
+                {"message": "OTP verified successfully. Email is confirmed.",
+                'auth-status': 'success'},
                 status=status.HTTP_200_OK
                 )
         except Exception as e:
             return Response(
-                        {"error": f"Faied to verify OTP:, {e}"},
+                        {"error": f"Faied to verify OTP:, {e}",
+                        'auth-status': 'failed'},
+                        status= status.HTTP_400_BAD_REQUEST
                     )
+            
+## USER SIGN-UP OTP VERIFICATION }
+            
+
+## USER SIGN-UP ADD USER DETAILS {
         
 class SignupUserDetailsView(generics.CreateAPIView):
     permission_classes = [AllowAny]
     serializer_class = UserSerializer
     
     def create(self, request):
-        serializer = self.get_serializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(
-                {"error": "Invalid data", "details": serializer.errors},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-            
-        validated_data = serializer.validated_data
-        user = serializer.create(validated_data)
-        
-        return Response(
-            {"message": "User created successfully.", "user": UserSerializer(user).data},
-            status=status.HTTP_201_CREATED
-        )
+        try:
+            print("PRINT REQUEST:",request.data)
+            email_confirmation = Email_temporary.objects.get(email=request.data['email'])
 
+            if email_confirmation is None:
+                return Response(
+                    {"error": "Email is not confirmed.Retry from email verification",
+                     "auth-status":"unauthorized"},
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
+            serializer = self.get_serializer(data=request.data)
+            print("SERILIZE REQUEST:",serializer)
+            if not serializer.is_valid():
+                print("Error in serializer: ", serializer.errors)
+                return Response(
+                    {"error": "Invalid data", "details": serializer.errors},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+                
+            validated_data = serializer.validated_data
+            user = serializer.create(validated_data)
+            print('WORKING USER',user)
+            # email_confirmation.delete()
+            print('WORKING UISERDEARILS')
+            return Response(
+                {"message": "User created successfully.", "user": UserSerializer(user).data,
+                "auth-status":"success"},
+                status=status.HTTP_201_CREATED
+            )
+        except Exception as e:
+            print("Error in user details: " + str(e))
+            return Response ({
+                'message': "User created successfully",'auth-status': 'success'}, 
+            status=status.HTTP_400_BAD_REQUEST
+            )
+
+## USER SIGN-UP ADD USER DETAILS }
+
+
+## USER LOGIN (Opt) & PASSWORD RESET {
+    
 class LoginView(APIView):
     permission_classes = [AllowAny]
     serializer_class = PasswordResetSerializer
@@ -115,35 +196,41 @@ class LoginView(APIView):
             return Response({'error': 'Invalid action'}, status=status.HTTP_400_BAD_REQUEST)
         
     def handle_login(self, request, *args, **kwargs):
-        print("    MMMM     ::")
-        username = request.data.get('username')
-        password = request.data.get('password')
-        user = authenticate(username=username, password=password)
-        print("USER :", user)
-        if user is not None:
-            refresh = RefreshToken.for_user(user)
-            access_token = str(refresh.access_token)
-            refresh_token = str(refresh)
-                
-            response = Response ({
-                "access_token": access_token,
-                "refresh_token": refresh_token
-            }, status=status.HTTP_200_OK)
-                
-            response.set_cookie(
-                key='access_token',
-                value=access_token,
-                httponly = True,
-                secure=True,
-            )
-            response.set_cookie(
-                key="refresh_token",
-                value=refresh_token,
-                httponly=True,
-                secure=True
-            )
-            return response
-        else:
+        try:
+            user = self.UserAuthenticator(request.data)
+            serializer = UserSerializer(user)
+            print("USER :", user)
+            if user is not None:
+                refresh = RefreshToken.for_user(user)
+                access_token = str(refresh.access_token)
+                refresh_token = str(refresh)
+                print(access_token, refresh_token)
+                    
+                response = Response ({
+                    "access_token": access_token,
+                    "refresh_token": refresh_token,
+                    "user": serializer.data,
+                    "message": "Logged in successfully",
+                    "auth-status": "success",
+                }, status=status.HTTP_200_OK)
+                print("RESPONSE :", response)
+                response.set_cookie(
+                    key='access_token',
+                    value=access_token,
+                    httponly = True,
+                    secure=True,
+                )
+                response.set_cookie(
+                    key="refresh_token",
+                    value=refresh_token,
+                    httponly=True,
+                    secure=True
+                )
+                return response
+            else:
+                return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+        except Exception as e:
+            print("Error in login: ", str(e))
             return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
     def forgot_password(self,request):
@@ -162,7 +249,42 @@ class LoginView(APIView):
         
         rest_url = f"http://127.0.0.1:8000/reset-password/{uidb64}/{token}/"
         return Response({"reset_url":f"{rest_url}"}, status=status.HTTP_200_OK)
-        
+    
+    def UserAuthenticator(self, data):
+        email = data.get('email')
+        password = data.get('password')
+        try:
+            user = UserAddon.objects.get(email=email)
+            print(user, "GOTTTT")
+            if user.check_password(password):
+                print("111")
+                return user
+            else:
+                print("222")
+                return None
+        except UserAddon.DoesNotExist:
+            print("333")
+            return None
+
+## USER LOGIN (Opt) & PASSWORD RESET }
+
+
+## USER SIGN-UP PROFILE UPDATE {
+
 class UploadProfile(APIView):
     permission_classes = [IsAuthenticated]
     pass
+
+## USER SIGN-UP PROFILE UPDATE }
+
+
+## USER SIGN-UP SAMPLE TOKEN CHECKER {
+
+class SampleRequestChecker(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self,request):
+        print(request.data, "WORKINGGG")
+        return Response({"message":"Request accepted"}, status=status.HTTP_200_OK)
+
+## USER SIGN-UP SAMPLE TOKEN CHECKER }

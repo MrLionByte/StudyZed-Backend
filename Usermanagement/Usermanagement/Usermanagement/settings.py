@@ -34,7 +34,6 @@ ALLOWED_HOSTS = ["localhost","127.0.0.1"]
 
 
 # Application definition
-
 INSTALLED_APPS = [
     
     'django.contrib.admin',
@@ -51,6 +50,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'rest_framework_simplejwt.token_blacklist',
+     'corsheaders',
     
     # Add on Apps
     # 'mjml'
@@ -58,6 +58,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -66,6 +67,22 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+
+# SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
+# SESSION_COOKIE_AGE = 1209600  # 2 weeks
+# SESSION_SAVE_EVERY_REQUEST = True
+# SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+# SESSION_ENGINE = "django.contrib.sessions.backends.cached_db",
+# SESSION_COOKIE_HTTPONLY = True
+# SESSION_COOKIE_SAMESITE = None
+
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+]
+
 
 ROOT_URLCONF = 'Usermanagement.urls'
 
@@ -94,11 +111,17 @@ WSGI_APPLICATION = 'Usermanagement.wsgi.application'
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql_psycopg2",
-        "NAME": os.getenv('DB_NAME'),
-        "USER": os.getenv('DB_USER'),
-        "PASSWORD": os.getenv('DB_PASSWORD'),
-        "HOST": os.getenv('DB_HOST'),
-        "PORT": os.getenv('DB_PORT'),
+        # "NAME": os.getenv('DB_NAME'),
+        # "USER": os.getenv('DB_USER'),
+        # "PASSWORD": os.getenv('DB_PASSWORD'),
+        # "HOST": os.getenv('DB_HOST'),
+        # "PORT": os.getenv('DB_PORT'),
+        "NAME": 'usermanagement_studyzed',
+        "USER": 'fmn',
+        "PASSWORD": 'mrlionbyte',
+        "HOST": 'localhost',
+        "PORT": 5432,
+ 
     }
 }
 
@@ -177,4 +200,3 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 
 # MJML_BACKEND_MODE = "cmd"
 # MJML_EXEC_CMD = ['/home/mrlionbyte/.local/bin/mjml', '--stdin', '--stdout']
-
