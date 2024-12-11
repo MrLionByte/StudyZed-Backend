@@ -119,7 +119,7 @@ DATABASES = {
         "NAME": 'usermanagement_studyzed',
         "USER": 'fmn',
         "PASSWORD": 'mrlionbyte',
-        "HOST": 'localhost',
+        "HOST": 'db',
         "PORT": 5432,
  
     }
