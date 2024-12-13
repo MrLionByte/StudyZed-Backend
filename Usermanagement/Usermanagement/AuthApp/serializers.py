@@ -59,7 +59,6 @@ class PasswordResetSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
     def validate_email(self, value):
-        # Check if the email exists in the database
         if not UserAddon.objects.filter(email=value).exists():
             raise serializers.ValidationError("User with this email does not exist.")
         return value
@@ -85,7 +84,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def get_token(cls, user):
         print("TOKEN MODIFY WORKING")
         token = super().get_token(user)
-        # Add custom claims if needed
         token['email'] = user.email
         print("TOKEN",token)
         return token

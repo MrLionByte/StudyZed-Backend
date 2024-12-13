@@ -8,6 +8,10 @@ from django.utils import timezone
 from datetime import timedelta
 import random
 
+# Python Email temp library : 
+# mail to celery
+
+
 
 def send_verification_email(recipient_list):
     OTP, created_at, expires_at = generate_OTP()

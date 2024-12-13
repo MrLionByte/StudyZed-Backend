@@ -80,6 +80,10 @@ class SignupEmailProcedureView(generics.CreateAPIView):
                 "message": f"Email verification failed {e}",
                 "auth-status": "failure"
                 },status= status.HTTP_400_BAD_REQUEST)
+        except ValueError as e:
+            return Response ({
+                "message": f"Email verification failed, email already in use",
+                "error": e}, status= status.HTTP_409_CONFLICT );
 
 ## USER SIGN-UP EMAIL }
 
@@ -256,7 +260,7 @@ class LoginView(APIView):
         try:
             user = UserAddon.objects.get(email=email)
             print(user, "GOTTTT")
-            if user.check_password(password):
+            if user.check_password(password) :
                 print("111")
                 return user
             else:
@@ -267,15 +271,6 @@ class LoginView(APIView):
             return None
 
 ## USER LOGIN (Opt) & PASSWORD RESET }
-
-
-## USER SIGN-UP PROFILE UPDATE {
-
-class UploadProfile(APIView):
-    permission_classes = [IsAuthenticated]
-    pass
-
-## USER SIGN-UP PROFILE UPDATE }
 
 
 ## USER SIGN-UP SAMPLE TOKEN CHECKER {

@@ -1,6 +1,6 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from .views import (SignupEmailProcedureView, SignupOTPVerificationView, UploadProfile,
+from .views import (SignupEmailProcedureView, SignupOTPVerificationView,
                     LoginView, SignupUserDetailsView, SampleRequestChecker,
                     )
 
@@ -15,8 +15,6 @@ urlpatterns = [
         
     path("login/", LoginView.as_view(), name="login"),
     path("login/forgot-password/", LoginView.as_view(), name="forgot_password"),
-    
-    path("upload-profile/", UploadProfile.as_view(), name="upload_profile"),
     
     path("sample-request/", SampleRequestChecker.as_view(), name="sample"),
     
