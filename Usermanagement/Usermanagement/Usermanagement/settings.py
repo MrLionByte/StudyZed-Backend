@@ -14,6 +14,8 @@ from pathlib import Path
 from datetime import timedelta
 from dotenv import load_dotenv
 import os
+import cloudinary, cloudinary.uploader, cloudinary.api
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -54,6 +56,7 @@ INSTALLED_APPS = [
     
     # Add on Apps
     # 'mjml'
+    'cloudinary'
     
 ]
 
@@ -178,7 +181,7 @@ REST_FRAMEWORK = {
 
 SIMPLE_JWT = {
     
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=int(os.getenv('ACCESS_TOKEN_LIFETIME',60))),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=int(os.getenv('ACCESS_TOKEN_LIFETIME',1660))),
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=int(os.getenv('REFRESH_TOKEN_LIFETIME',1))),
     
     'SLIDING_TOKEN_LIFETIME': timedelta(days=30),
@@ -197,6 +200,17 @@ EMAIL_PORT = os.environ.get('EMAIL_PORT')
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 
+# Cloudinary Configuration
+cloudinary.config( 
+    cloud_name = "djv9jwwem", 
+    api_key = "538373721727889", 
+    api_secret = "mUlGQjdF0aVrZSOVAZpwrB2zVjY", # Click 'View API Keys' above to copy your API secret
+    secure=True
+)
+
+
 
 # MJML_BACKEND_MODE = "cmd"
 # MJML_EXEC_CMD = ['/home/mrlionbyte/.local/bin/mjml', '--stdin', '--stdout']
+
+Development_JWToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyNCIsIm5hbWUiOiJNciBMaW9uYnl0ZSIsImlhdCI6MTUxNjIzOTAyMn0.fXulShAATFimXDW4MSSxRp-FDtyRwKNU3Pfp1TDT6CU'
