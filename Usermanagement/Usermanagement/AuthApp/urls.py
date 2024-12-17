@@ -2,12 +2,13 @@ from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from .views import (SignupEmailProcedureView, SignupOTPVerificationView,
                     LoginView, SignupUserDetailsView, SampleRequestChecker,
-                    ForgottenPasswordView, )
+                    ForgottenPasswordView, SignupOTPResendView)
 
 urlpatterns = [
     # USER SIGN-UP
     path("user-email/", SignupEmailProcedureView.as_view(), name="email_verification"),
     path("verify-otp/", SignupOTPVerificationView.as_view(), name="otp_verification"),
+    path("resend-otp/", SignupOTPResendView.as_view(), name="otp_resend"),
     path("user-details/", SignupUserDetailsView.as_view(), name="user_signup"),
     
     # DRF TOKEN ACCESS & REFRESH

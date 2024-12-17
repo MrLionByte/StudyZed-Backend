@@ -3,8 +3,12 @@ from AuthApp.models import Profile
 from rest_framework import status, generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from cloudinary.uploader import upload
-from cloudinary.utils import cloudinary_url
+from .serializers import (
+    UploadProfilePictureSerializer, UploadCoverPictureSerializer,
+    UpdatePhoneNumberSerializer, ProfileSerializer
+    )
+from .utils.cloudnary import upload_file_to_cloudinary
+from .utils.response import api_response
 
 # Create your views here.
 
@@ -12,39 +16,39 @@ from cloudinary.utils import cloudinary_url
 
 class UploadAndUpdateProfilePicView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = UploadProfilePictureSerializer
     
     def post(self, request):
-        print("PROFILE PIC UPLOAD", request.data)
-        user = request.user
-        print("FILES :", request.FILES)
-        file = request.FILES.get('file')  # `file` should match the key used in FormData
-        print("Uploaded file:", file)
-        try:
-            cloudinary_response = upload(
-                file,
-                folder='Home/STUDYZED/profile_picture',
-                public_id=f"{user}_Profile Pic",
-                overwrite=True,
-                crop='fill',
-                width=300,
-                height=300,
-                )
-            image_url = cloudinary_response['secure_url']
-            profile, created = Profile.objects.get_or_create(user=user)
-            profile.profile_picture = image_url
-            profile.save()
-            
-            print("PROFILE :", profile)
-            return Response({
-                'message':f'{profile.profile_picture}',
-                'user':f'{profile.user.username}',
-            })
-        except Exception as e:
-            print("ERROR :", e)
-    
-    def get(request, *args, **kwargs):
-        pass
         
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+        
+            file = serializer.validated_data['file']
+            user = request.user
+            
+            try:
+                image_url = upload_file_to_cloudinary(
+                    file = file,
+                    folder_name='Home/STUDYZED/profile_picture',
+                    public_id=f"{user}_profile_pic",
+                    crop='fill',
+                    width=300,
+                    height=300,
+                )
+                
+                profile, _ = Profile.objects.get_or_create(user=user)
+                profile.profile_picture = image_url
+                profile.save()
+
+                return api_response(
+                    success=True, message="Profile picture updated successfully",
+                    data=ProfileSerializer(profile).data, status_code = 200
+                )
+            except ValueError as e:
+                return api_response(False, "Failed to update profile picture",
+                                    data=str(e), status_code=500)
+        return api_response(False, "Invalid Profile Pic data",
+                            data=serializer.errors,status_code=400)
         
 
 ## USER PROFILE PIC UPDATE }
@@ -54,35 +58,35 @@ class UploadAndUpdateProfilePicView(generics.GenericAPIView):
 
 class UploadAndUpdateCoverPicView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = UploadCoverPictureSerializer
     
     def post(self, request):
-        print("COVER PIC UPLOAD", request.data)
-        user = request.user
-        print("FILES :", request.FILES)
-        file = request.FILES.get('file')  # `file` should match the key used in FormData
-        print("Uploaded file:", file)
-        try:
-            cloudinary_response = upload(
-                file,
-                folder='Home/STUDYZED/cover_picture',
-                public_id=f"{user}_cover_picture",
-                overwrite=True,
-                # crop='fill',
-                # width=300,
-                # height=300,
-                )
-            image_url = cloudinary_response['secure_url']
-            profile, created = Profile.objects.get_or_create(user=user)
-            profile.cover_picture = image_url
-            profile.save()
+        
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            file = serializer.validated_data['file']
+            user = request.user
             
-            print("PROFILE :", profile)
-            return Response({
-                'message':f'{profile.cover_picture}',
-                'user':f'{profile.user.username}',
-            })
-        except Exception as e:
-            print("ERROR :", e)
+            try:
+                image_url = upload_file_to_cloudinary(
+                    file=file,
+                    folder_name='Home/STUDYZED/cover_picture',
+                    public_id=f"{user}_cover_picture",
+                    )
+
+                profile, _ = Profile.objects.get_or_create(user=user)
+                profile.cover_picture = image_url
+                profile.save()
+                
+                return api_response(
+                    True, "Cover photo updated successfully",
+                    data=ProfileSerializer(profile).data
+                )
+            except ValueError as e:
+                return api_response(False, "Failed to update cover photo",
+                                    data=str(e), status_code=500)
+        return api_response(False, "Invalid photo data",
+                            data=serializer.errors, status_code=400)
 
 ## USER SIGN-UP PROFILE UPDATE }
 
@@ -91,9 +95,27 @@ class UploadAndUpdateCoverPicView(generics.GenericAPIView):
 
 
 class UpdatePhoneNumberView(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = UpdatePhoneNumberSerializer
     
     def post(self, request):
-        pass
+        serializer = self.get_serializer(data=request.data)
+        
+        if serializer.is_valid():
+            phone = serializer.validated_data['phone']
+            user = request.user
+            
+            profile, _ = Profile.objects.get_or_create(user=user)
+            profile.phone = phone
+            profile.save()
+            
+            return api_response(
+                True, "Phone number updated successfully",
+                data=ProfileSerializer(profile).data
+            )
+        return api_response(
+            False, "Invalid phone number data",
+            data=serializer.errors, status_code=400)
 
 
 ## USER SIGN-UP PROFILE UPDATE }

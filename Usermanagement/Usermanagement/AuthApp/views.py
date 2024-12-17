@@ -161,6 +161,48 @@ class SignupOTPVerificationView(generics.CreateAPIView):
 ## USER SIGN-UP OTP VERIFICATION }
 
 
+## USER SIGN-UP OTP RESEND {
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class SignupOTPResendView(generics.CreateAPIView):
+    permission_classes = [AllowAny]
+    serializer_class = OTPVerificationSerializer
+
+    def post(self, request):
+
+        serializer = self.get_serializer(data=request.data)
+        try:
+            user_under_verification = Email_temporary.objects.get(
+                email=request.data["email"]
+            )
+
+            if not serializer.is_valid():
+                print("Error", serializer.errors)
+                return Response(
+                    {"error": "Invalid data", "details": serializer.errors},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            # print(request.session['validationsteps'])
+            user_under_verification.is_authenticated = True
+            user_under_verification.save()
+            return Response(
+                {
+                    "message": "OTP verified successfully. Email is confirmed.",
+                    "auth-status": "success",
+                },
+                status=status.HTTP_200_OK,
+            )
+        except Exception as e:
+            return Response(
+                {"error": f"Faied to verify OTP:, {e}", "auth-status": "failed"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+
+## USER SIGN-UP OTP RESEND }
+
+
 ## USER SIGN-UP ADD USER DETAILS {
 
 

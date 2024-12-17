@@ -71,8 +71,19 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'Location': 'redis://127.0.0.1:6379/1',
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
+    }
+}
 
-# SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+SESSION_CACHE_ALIAS = 'default'
+
 # SESSION_COOKIE_AGE = 1209600  # 2 weeks
 # SESSION_SAVE_EVERY_REQUEST = True
 # SESSION_EXPIRE_AT_BROWSER_CLOSE = True
@@ -164,6 +175,9 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = 'static/'
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "static"),
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -209,8 +223,3 @@ cloudinary.config(
 )
 
 
-
-# MJML_BACKEND_MODE = "cmd"
-# MJML_EXEC_CMD = ['/home/mrlionbyte/.local/bin/mjml', '--stdin', '--stdout']
-
-Development_JWToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyNCIsIm5hbWUiOiJNciBMaW9uYnl0ZSIsImlhdCI6MTUxNjIzOTAyMn0.fXulShAATFimXDW4MSSxRp-FDtyRwKNU3Pfp1TDT6CU'
