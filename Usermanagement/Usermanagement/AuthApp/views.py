@@ -1,15 +1,10 @@
-from django.shortcuts import render
+import redis
+import json
 from .models import Email_temporary, UserAddon
 from rest_framework.response import Response
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from .serializers import (
-    UserSerializer,
-    OTPVerificationSerializer,
-    EmailVerificationSerializer,
-    PasswordResetSerializer,
-    CustomTokenObtainPairSerializer,
-)
+from .serializers import *
 from rest_framework.views import APIView
 from .mails import send_verification_email
 from django.utils.timezone import now
@@ -21,73 +16,52 @@ from django.utils.http import urlsafe_base64_encode
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.sessions.models import Session
+from celery.result import AsyncResult
+
 
 # Create your views here.
+
+redis_client = redis.StrictRedis(host='redis', port=6379, db=0,
+                                 decode_responses=True)
 
 ## USER SIGN-UP EMAIL {
 
 
 class SignupEmailProcedureView(generics.CreateAPIView):
-
     permission_classes = [AllowAny]
     serializer_class = EmailVerificationSerializer
 
     def post(self, request):
-        print("WORKING 111")
-        # print(f"Session keys: {request.session.keys()}")
-        # print("REQUEST :" ,request)
-        # print("REQUEST :" ,request.data)
-        # print(f"Session ID: {request.session.session_key}")
         temp_mail = request.data["email"]
         if Email_temporary.objects.filter(email=temp_mail).exists():
             Email_temporary.objects.filter(email=temp_mail).delete()
         serializer = self.get_serializer(data=request.data)
-        print(serializer)
         try:
-
-            if not serializer.is_valid():
-                return Response(
-                    {"error": "Invalid data", "details": serializer.errors},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
+            serializer.is_valid(raise_exception=True)
+            
             email = serializer.validated_data["email"]
-            print("WORKING 122", email)
-            email_status = send_verification_email(email)
-
-            if not email_status["success"]:
+            print("SER EMAIl :", email)
+            email_task = send_verification_email.delay(email)
+            result = AsyncResult(email_task.id)
+            print("RESULT :", result.get(),"  :::: " ,result.result)
+            if result.status == "PENDING":
                 print("WORKING 133")
                 return Response(
-                    {"error": email_status["message"]},
+                    {"error": "ERROR"},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
-
-            request.session["validationsteps"] = {
-                "email": email,
-                "otp": email_status["otp"],
-                "no_of_try": 0,
-                "created_at": email_status["created_at"].isoformat(),
-                "expires_at": email_status["expires_at"].isoformat(),
-            }
-            print("WORKING 144", request.session["validationsteps"])
-            # print(f"DATA IN SESSION : {request.session['validationsteps']}")
-            # print(f"Session keys: {request.session.keys()}")
-            # print(f"Session ID: {request.session.session_key}")
-
-            new = Email_temporary.objects.create(
-                email=email,
-                otp=email_status["otp"],
-                expires_at=email_status["expires_at"],
-            )
-            print("TEMP :", new)
-            print("WORKING 1555")
-            return Response(
-                {
-                    "message": "Email verification failed",
-                    "auth-status": "success",
-                },
+            
+            print("RESULT :", result.get(),"  :::: " ,result.result)
+            # new_temp_data = Email_temporary.objects.create(
+            #     email=email,otp=email_status['otp'],expires_at=email_status['expires_at'])
+            # print("TEMP :", new_temp_data)
+            # print("WORKING 1555")
+            return Response({
+                "message": "Email verification failed",
+                "auth-status": "success",},
                 status=status.HTTP_200_OK,
-            )
+                )
+
         except Exception as e:
             print("Error details: ", e)
             return Response(
@@ -136,7 +110,7 @@ class SignupOTPVerificationView(generics.CreateAPIView):
                     status=status.HTTP_429_TOO_MANY_REQUESTS,
                 )
             if not serializer.is_valid():
-                print("Error", serializer.errors)
+                print("Error ser", serializer.errors)
                 return Response(
                     {"error": "Invalid data", "details": serializer.errors},
                     status=status.HTTP_400_BAD_REQUEST,
@@ -383,3 +357,4 @@ class SampleRequestChecker(APIView):
 
 
 ## USER SIGN-UP SAMPLE TOKEN CHECKER }
+

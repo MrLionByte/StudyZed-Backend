@@ -15,6 +15,7 @@ class EmailVerificationSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
 
     def validate_email(self, value):
+        print("VAL :", value)
         if UserAddon.objects.filter(email=value).exists():
             raise serializers.ValidationError('Email already exists')
         return value

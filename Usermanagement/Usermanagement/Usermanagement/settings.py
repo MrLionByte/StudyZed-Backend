@@ -56,7 +56,8 @@ INSTALLED_APPS = [
     
     # Add on Apps
     # 'mjml'
-    'cloudinary'
+    'cloudinary',
+    'celery',
     
 ]
 
@@ -74,15 +75,24 @@ MIDDLEWARE = [
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
-        'Location': 'redis://127.0.0.1:6379/1',
+        'LOCATION': 'redis://redis:6379/1',
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
         }
     }
 }
 
-SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
-SESSION_CACHE_ALIAS = 'default'
+# SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+# SESSION_CACHE_ALIAS = 'default'
+
+
+CELERY_BROKER_URL = 'redis://redis:6379/0'
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+CELERY_RESULT_BACKEND = 'redis://redis:6379/0'
+CELERY_RESULT_EXTENDED = True
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
 
 # SESSION_COOKIE_AGE = 1209600  # 2 weeks
 # SESSION_SAVE_EVERY_REQUEST = True
@@ -204,9 +214,11 @@ SIMPLE_JWT = {
     
     'BLACKLIST_AFTER_ROTATION': True,
 }
-print("SIMPLE_JWT :", SIMPLE_JWT)
+
 AUTH_USER_MODEL = 'AuthApp.UserAddon'
 
+
+# EMAIL_BACKEND = 'djcelery_email.backends.CeleryEmailBackend'
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS')
