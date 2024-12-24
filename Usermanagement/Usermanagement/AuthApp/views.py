@@ -17,6 +17,9 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.sessions.models import Session
 from celery.result import AsyncResult
+from django.utils import timezone
+from zoneinfo import ZoneInfo
+
 
 
 # Create your views here.
@@ -29,6 +32,7 @@ redis_client = redis.StrictRedis(host='redis', port=6379, db=0,
 
 class SignupEmailProcedureView(generics.CreateAPIView):
     permission_classes = [AllowAny]
+    authentication_classes = [AllowAny]
     serializer_class = EmailVerificationSerializer
 
     def post(self, request):
@@ -50,14 +54,15 @@ class SignupEmailProcedureView(generics.CreateAPIView):
                     {"error": "ERROR"},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
+            data = result.get()
+            expires_at = timezone.make_aware(data['task']['expires_at'], timezone=ZoneInfo('UTC'))
+            print(type(expires_at))
+            print("REDIS : ",redis_client.hgetall(email))
+            new_temp_data = Email_temporary.objects.create(
+                email=email,otp= data['task']['otp'],expires_at=expires_at)
             
-            print("RESULT :", result.get(),"  :::: " ,result.result)
-            # new_temp_data = Email_temporary.objects.create(
-            #     email=email,otp=email_status['otp'],expires_at=email_status['expires_at'])
-            # print("TEMP :", new_temp_data)
-            # print("WORKING 1555")
             return Response({
-                "message": "Email verification failed",
+                "message": "Email verification success",
                 "auth-status": "success",},
                 status=status.HTTP_200_OK,
                 )
@@ -87,21 +92,25 @@ class SignupEmailProcedureView(generics.CreateAPIView):
 @method_decorator(csrf_exempt, name="dispatch")
 class SignupOTPVerificationView(generics.CreateAPIView):
     permission_classes = [AllowAny]
+    authentication_classes = [AllowAny]
     serializer_class = OTPVerificationSerializer
 
     def post(self, request):
-
-        # print(f"DATA IN SESSION AFTER TRY : {request.session['validationsteps']}")
-        # request.session["validationsteps"]['no_of_try'] = int(request.session["validationsteps"].get('no_of_try')) + 1
-        # request.session.modified = True
-        # print(f"DATA IN SESSION AFTER TRY : {request.session['validationsteps']}")
+        print("WORKING")
         serializer = self.get_serializer(data=request.data)
         try:
+            print("SER ", serializer)
             user_under_verification = Email_temporary.objects.get(
                 email=request.data["email"]
             )
             print("user_under_verification :", user_under_verification)
             user_under_verification.no_of_try += 1
+           
+            key = request.data["email"]
+            print("REDIS TO INCRESE: ",redis_client.hgetall(key))
+            redis_client.hincrby(key, 'resend_count', 1)
+            print(" :: ", redis_client.hgetall(key))
+                
             user_under_verification.save()
             # if request.session["validationsteps"]['no_of_try'] > 5:
             if user_under_verification.no_of_try > 5:
@@ -141,6 +150,7 @@ class SignupOTPVerificationView(generics.CreateAPIView):
 @method_decorator(csrf_exempt, name="dispatch")
 class SignupOTPResendView(generics.CreateAPIView):
     permission_classes = [AllowAny]
+    authentication_classes = [AllowAny]
     serializer_class = OTPVerificationSerializer
 
     def post(self, request):
@@ -182,6 +192,7 @@ class SignupOTPResendView(generics.CreateAPIView):
 
 class SignupUserDetailsView(generics.CreateAPIView):
     permission_classes = [AllowAny]
+    authentication_classes = [AllowAny]
     serializer_class = UserSerializer
 
     def create(self, request):
@@ -237,6 +248,7 @@ class SignupUserDetailsView(generics.CreateAPIView):
 
 class LoginView(APIView):
     permission_classes = [AllowAny]
+    authentication_classes = [AllowAny]
     print("WORKING")
 
     def post(self, request, *args, **kwargs):
@@ -245,7 +257,7 @@ class LoginView(APIView):
             # print("PARAMS :", request.GET.get('login_type'))
             serializer = UserSerializer(user)
             print("USER :", user)
-            if user is not None:
+            if user is not None and user.is_active:
                 refresh = RefreshToken.for_user(user)
                 access_token = str(refresh.access_token)
                 refresh_token = str(refresh)
@@ -256,6 +268,7 @@ class LoginView(APIView):
                         "access_token": access_token,
                         "refresh_token": refresh_token,
                         "user": serializer.data,
+                        "role": user.role,
                         "message": "Logged in successfully",
                         "auth-status": "success",
                     },
@@ -272,6 +285,11 @@ class LoginView(APIView):
                     key="refresh_token", value=refresh_token, httponly=True, secure=True
                 )
                 return response
+            elif user is not None and not user.is_active:
+                return Response(
+                    {"error": "User is blocked",
+                     "auth-status":"blocked"}, status=status.HTTP_401_UNAUTHORIZED
+                )
             else:
                 return Response(
                     {"error": "Invalid credentials"},
@@ -289,12 +307,12 @@ class LoginView(APIView):
         try:
             user = UserAddon.objects.get(email=email)
             print(user, "GOTTTT")
-            if user.check_password(password):
+            if user.check_password(password) and user.is_active:
                 print("111")
                 return user
-            else:
+            elif not user.is_active:
                 print("222")
-                return None
+                return "User Blocked"
         except UserAddon.DoesNotExist:
             print("333")
             return None
@@ -308,6 +326,7 @@ class LoginView(APIView):
 
 class ForgottenPasswordView(APIView):
     permission_classes = [AllowAny]
+    authentication_classes = [AllowAny]
     serializer_class = PasswordResetSerializer
 
     def forgot_password(self, request):

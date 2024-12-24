@@ -27,16 +27,6 @@ class OTPVerificationSerializer(serializers.Serializer):
     def validate(self, attrs):
         email = attrs.get('email')
         otp = attrs.get('otp')
-        # session_data = self.context["request"].session.get("validationsteps", {})
-        # if not session_data:
-        #     raise serializers.ValidationError("OTP is not found. Please request for a new otp")
-        # if email != session_data.get("email",):
-        #     raise serializers.ValidationError("Email does not match")
-        # if otp!= str(session_data.get("otp")):
-        #     raise serializers.ValidationError("OTP is incorrect")
-        # expires = datetime.fromisoformat(session_data.get("expires_at"))
-        # if now() > expires:
-        #     raise serializers.ValidationError("OTp has expired. Please request a new one and try again.")
         try:
             user_under_verification = Email_temporary.objects.get(email=email)
             if user_under_verification.otp!= otp:

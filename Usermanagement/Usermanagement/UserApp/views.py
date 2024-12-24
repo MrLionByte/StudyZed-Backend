@@ -3,12 +3,12 @@ from AuthApp.models import Profile
 from rest_framework import status, generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from .serializers import (
-    UploadProfilePictureSerializer, UploadCoverPictureSerializer,
-    UpdatePhoneNumberSerializer, ProfileSerializer
-    )
+from .serializers import *
 from .utils.cloudnary import upload_file_to_cloudinary
 from .utils.response import api_response
+from rest_framework.authentication import TokenAuthentication
+
+from rest_framework.views import APIView
 
 # Create your views here.
 
@@ -119,3 +119,44 @@ class UpdatePhoneNumberView(generics.GenericAPIView):
 
 
 ## USER SIGN-UP PROFILE UPDATE }
+
+
+class UserAddonRetrieveView(generics.RetrieveAPIView):
+
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserAddonSerializer
+
+    def get_object(self):
+        return self.request.user
+
+class ProfileUpdateView(generics.UpdateAPIView):
+
+    permission_classes = [IsAuthenticated]
+    serializer_class = ProfileSerializer
+
+    def get_object(self):
+        return self.request.user.profile
+    
+class AdminLoginView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+      
+        if request.user.is_superuser:
+            return Response({"detail": "Admin logged in successfully."})
+        return Response({"detail": "Not authorized."}, status=403)
+    
+class AdminBlockUserView(generics.UpdateAPIView):
+    queryset = UserAddon.objects.all()
+    serializer_class = UserBlockSerializer
+    permission_classes = [IsAuthenticated]
+
+    def update(self, request, *args, **kwargs):
+        user = self.get_object()
+
+        if not request.user.is_superuser:
+            return Response({"detail": "You do not have permission to block/unblock users."},
+                            status=status.HTTP_403_FORBIDDEN)
+
+        return super().update(request, *args, **kwargs)

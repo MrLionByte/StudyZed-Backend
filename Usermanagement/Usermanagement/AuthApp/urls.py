@@ -13,7 +13,7 @@ urlpatterns = [
     
     # DRF TOKEN ACCESS & REFRESH
     path('user/token/', TokenObtainPairView.as_view(), name='token_obtain'),
-    path('user/login/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('user/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     
     # LOGIN & FORGOT PASSWORD
     path("login/", LoginView.as_view(), name="login"),

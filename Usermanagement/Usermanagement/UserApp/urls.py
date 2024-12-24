@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import UploadAndUpdateProfilePicView, UploadAndUpdateCoverPicView
+from .views import *
 
 
 urlpatterns = [
@@ -9,5 +9,9 @@ urlpatterns = [
     path("upload-cover-pic/", UploadAndUpdateCoverPicView.as_view(),
          name="upload_cover_pic"),
     
+    path('user-profile/', UserAddonRetrieveView.as_view(), name='user-profile'),
+    path('update-profile/', ProfileUpdateView.as_view(), name='update-profile'),
+    
+    path('admin/block-user/<int:pk>/', AdminBlockUserView.as_view(), name='admin-block-user'),
     
 ]
