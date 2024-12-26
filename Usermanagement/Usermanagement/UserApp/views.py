@@ -3,11 +3,12 @@ from AuthApp.models import Profile
 from rest_framework import status, generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
 from .serializers import *
 from .utils.cloudnary import upload_file_to_cloudinary
 from .utils.response import api_response
 from rest_framework.authentication import TokenAuthentication
-
+from rest_framework.exceptions import NotFound
 from rest_framework.views import APIView
 
 # Create your views here.
@@ -129,34 +130,26 @@ class UserAddonRetrieveView(generics.RetrieveAPIView):
     def get_object(self):
         return self.request.user
 
+    
 class ProfileUpdateView(generics.UpdateAPIView):
-
     permission_classes = [IsAuthenticated]
-    serializer_class = ProfileSerializer
-
+    serializer_class = UserAddonSerializer
+   
     def get_object(self):
-        return self.request.user.profile
-    
-class AdminLoginView(APIView):
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+        try:
+            user_email = self.request.user.email
+            user = UserAddon.objects.get(email=user_email)
+            return user
+        except UserAddon.DoesNotExist:
+            raise NotFound("User profile not found.")
 
-    def get(self, request):
-      
-        if request.user.is_superuser:
-            return Response({"detail": "Admin logged in successfully."})
-        return Response({"detail": "Not authorized."}, status=403)
-    
-class AdminBlockUserView(generics.UpdateAPIView):
-    queryset = UserAddon.objects.all()
-    serializer_class = UserBlockSerializer
-    permission_classes = [IsAuthenticated]
-
-    def update(self, request, *args, **kwargs):
-        user = self.get_object()
-
-        if not request.user.is_superuser:
-            return Response({"detail": "You do not have permission to block/unblock users."},
-                            status=status.HTTP_403_FORBIDDEN)
-
-        return super().update(request, *args, **kwargs)
+    def patch(self, request):
+        user_to_be_updated = self.get_object()
+        print("User to be updated:", user_to_be_updated)
+        serializer = self.get_serializer(user_to_be_updated, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            print("Update Successful")
+            return Response(serializer.data, status=200)
+        print("Validation Errors:", serializer.errors)
+        return Response(serializer.errors, status=400)

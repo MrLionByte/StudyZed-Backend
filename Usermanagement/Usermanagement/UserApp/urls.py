@@ -12,6 +12,6 @@ urlpatterns = [
     path('user-profile/', UserAddonRetrieveView.as_view(), name='user-profile'),
     path('update-profile/', ProfileUpdateView.as_view(), name='update-profile'),
     
-    path('admin/block-user/<int:pk>/', AdminBlockUserView.as_view(), name='admin-block-user'),
+    
     
 ]

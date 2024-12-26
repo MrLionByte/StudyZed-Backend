@@ -16,6 +16,9 @@ class UserAddonSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserAddon
         fields = ['id', 'username', 'email', 'role', 'profile', 'first_name', 'last_name']
+        
+    def update(self, instance, validated_data):
+        return super().update(instance, validated_data)
 
 class UploadProfilePictureSerializer(serializers.Serializer):
     file = serializers.ImageField(required=True)
@@ -26,14 +29,3 @@ class UploadCoverPictureSerializer(serializers.Serializer):
 class UpdatePhoneNumberSerializer(serializers.Serializer):
     phone = serializers.CharField(max_length=16 ,required=True) 
     
-class UserBlockSerializer(serializers.ModelSerializer):
-    is_active = serializers.BooleanField()
-    
-    class Meta:
-        model = UserAddon
-        fields = ['is_active']
-
-    def update(self, instance, validated_data):
-        instance.is_active = validated_data.get('is_active', instance.is_active)
-        instance.save()
-        return instance

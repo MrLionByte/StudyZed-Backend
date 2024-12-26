@@ -248,7 +248,7 @@ class SignupUserDetailsView(generics.CreateAPIView):
 
 class LoginView(APIView):
     permission_classes = [AllowAny]
-    authentication_classes = [AllowAny]
+    # authentication_classes = [AllowAny]
     print("WORKING")
 
     def post(self, request, *args, **kwargs):
