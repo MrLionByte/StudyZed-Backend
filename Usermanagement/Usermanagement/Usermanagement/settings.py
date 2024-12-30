@@ -46,7 +46,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     
     'AuthApp',
-    'UserApp', 
+    'UserApp',
+    'Admin_app', 
     
     # To use Django REST Framework
     'rest_framework',

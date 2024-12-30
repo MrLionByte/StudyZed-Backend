@@ -7,11 +7,6 @@ def api_response(success, message, data={}, auth_status=None, status_code=None):
         "message": message,
         "data": data,
         "auth-status": auth_status,
-        # "errors": errors,
     }
+    print(response_structure)
     return Response(response_structure, status=status_code)
-
-
-
-# Swagger for API documentation.
-# Postman code refer.

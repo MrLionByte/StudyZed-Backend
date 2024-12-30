@@ -23,6 +23,7 @@ class UserAddon(AbstractUser):
         ('TUTOR', 'Tutor'),
     )
     role = models.CharField(choices=ROLE_CHOICES,blank=False, null=False, max_length=15)
+    google_id = models.CharField(max_length= 255, blank=True)
     
     def __str__(self):
         return self.username
