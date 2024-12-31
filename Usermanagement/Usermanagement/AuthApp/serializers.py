@@ -17,19 +17,20 @@ class EmailVerificationSerializer(serializers.Serializer):
     def validate_email(self, value):
         print("VAL :", value)
         if UserAddon.objects.filter(email=value).exists():
-            raise serializers.ValidationError('Email already exists')
+            raise serializers.ValidationError("Email already exists")
         return value
+
 
 class OTPVerificationSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
     otp = serializers.CharField(required=True, max_length=6)
-    
+
     def validate(self, attrs):
-        email = attrs.get('email')
-        otp = attrs.get('otp')
+        email = attrs.get("email")
+        otp = attrs.get("otp")
         try:
             user_under_verification = Email_temporary.objects.get(email=email)
-            if user_under_verification.otp!= otp:
+            if user_under_verification.otp != otp:
                 raise serializers.ValidationError("OTP is incorrect")
             otp_expiry_time_str = user_under_verification.expires_at
             print(type(otp_expiry_time_str))
@@ -39,11 +40,18 @@ class OTPVerificationSerializer(serializers.Serializer):
             print(current_time)
             if current_time > otp_expiry_time_str:
                 user_under_verification.delete()
-                print("User under verification SER :", user_under_verification.expires_at, " NOW :",now())
-                raise serializers.ValidationError("OTp has expired. Please request a new one and try again.")
+                print(
+                    "User under verification SER :",
+                    user_under_verification.expires_at,
+                    " NOW :",
+                    now(),
+                )
+                raise serializers.ValidationError(
+                    "OTp has expired. Please request a new one and try again."
+                )
             return attrs
         except Exception as e:
-            print("Error in OTP SERIALIZER :",e)
+            print("Error in OTP SERIALIZER :", e)
 
 
 class PasswordResetSerializer(serializers.Serializer):
@@ -55,47 +63,54 @@ class PasswordResetSerializer(serializers.Serializer):
         return value
 
 
-
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         print(":::222::::", attrs)
-        email = self.context['request'].data.get('email')
+        email = self.context["request"].data.get("email")
         print(email)
         password = attrs.get("password")
         print(password)
         user = UserAddon.objects.get(email=email)
-        print(":::::::",email, user)
+        print(":::::::", email, user)
         if user is not None or not user.check_password(password):
-            raise serializers.ValidationError('Invalid email or password.')
-        
-        attrs['username'] = user.username
+            raise serializers.ValidationError("Invalid email or password.")
+
+        attrs["username"] = user.username
         return super().validate(attrs)
-    
+
     @classmethod
     def get_token(cls, user):
         print("TOKEN MODIFY WORKING")
         token = super().get_token(user)
-        token['email'] = user.email
-        print("TOKEN",token)
+        token["email"] = user.email
+        print("TOKEN", token)
         return token
 
 
 class UserSerializer(serializers.ModelSerializer):
     username = serializers.CharField(required=True)
-    role = serializers.CharField(required=True)  
-    first_name = serializers.CharField(required=True) 
-    last_name = serializers.CharField(required=False, allow_blank=True)  
-    password = serializers.CharField(write_only=True,required=True) 
-    
+    role = serializers.CharField(required=True)
+    first_name = serializers.CharField(required=True)
+    last_name = serializers.CharField(required=False, allow_blank=True)
+    password = serializers.CharField(write_only=True, required=True)
+
     class Meta:
         model = UserAddon
-        fields = ('id', 'username', 'password', 'role', 'first_name', 'last_name', 'email')
-        extra_kwargs = {'password': {'write_only': True, 'required': True}}
+        fields = (
+            "id",
+            "username",
+            "password",
+            "role",
+            "first_name",
+            "last_name",
+            "email",
+        )
+        extra_kwargs = {"password": {"write_only": True, "required": True}}
 
     def create(self, validated_data):
         print("USER SERIALIZATION", validated_data)
         user = UserAddon.objects.create_user(**validated_data)
-        print("USER",user)
+        print("USER", user)
         return user
 
     def update(self, instance, validated_data):

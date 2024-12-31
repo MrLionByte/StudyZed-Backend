@@ -12,6 +12,5 @@ def api_response(success, message, data={}, auth_status=None, status_code=None):
     return Response(response_structure, status=status_code)
 
 
-
 # Swagger for API documentation.
 # Postman code refer.

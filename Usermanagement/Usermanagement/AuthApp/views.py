@@ -25,11 +25,9 @@ import string
 from google.oauth2 import id_token
 
 
-
 # Create your views here.
 
-redis_client = redis.StrictRedis(host='redis', port=6379, db=0,
-                                 decode_responses=True)
+redis_client = redis.StrictRedis(host="redis", port=6379, db=0, decode_responses=True)
 
 ## USER SIGN-UP EMAIL {
 
@@ -45,12 +43,12 @@ class SignupEmailProcedureView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         try:
             serializer.is_valid(raise_exception=True)
-            
+
             email = serializer.validated_data["email"]
             print("SER EMAIl :", email)
             email_task = send_verification_email.delay(email)
             result = AsyncResult(email_task.id)
-            print("RESULT :", result.get(),"  :::: " ,result.result)
+            print("RESULT :", result.get(), "  :::: ", result.result)
             if result.status == "PENDING":
                 print("WORKING 133")
                 return Response(
@@ -58,17 +56,22 @@ class SignupEmailProcedureView(generics.CreateAPIView):
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
             data = result.get()
-            expires_at = timezone.make_aware(data['task']['expires_at'], timezone=ZoneInfo('UTC'))
+            expires_at = timezone.make_aware(
+                data["task"]["expires_at"], timezone=ZoneInfo("UTC")
+            )
             print(type(expires_at))
-            print("REDIS : ",redis_client.hgetall(email))
+            print("REDIS : ", redis_client.hgetall(email))
             new_temp_data = Email_temporary.objects.create(
-                email=email,otp= data['task']['otp'],expires_at=expires_at)
-            
-            return Response({
-                "message": "Email verification success",
-                "auth-status": "success",},
+                email=email, otp=data["task"]["otp"], expires_at=expires_at
+            )
+
+            return Response(
+                {
+                    "message": "Email verification success",
+                    "auth-status": "success",
+                },
                 status=status.HTTP_200_OK,
-                )
+            )
 
         except Exception as e:
             print("Error details: ", e)
@@ -107,12 +110,12 @@ class SignupOTPVerificationView(generics.CreateAPIView):
             )
             print("user_under_verification :", user_under_verification)
             user_under_verification.no_of_try += 1
-           
+
             key = request.data["email"]
-            print("REDIS TO INCRESE: ",redis_client.hgetall(key))
-            redis_client.hincrby(key, 'resend_count', 1)
+            print("REDIS TO INCRESE: ", redis_client.hgetall(key))
+            redis_client.hincrby(key, "resend_count", 1)
             print(" :: ", redis_client.hgetall(key))
-                
+
             user_under_verification.save()
             # if request.session["validationsteps"]['no_of_try'] > 5:
             if user_under_verification.no_of_try > 5:
@@ -250,53 +253,67 @@ class SignupWithGoogleAccountView(generics.CreateAPIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        temp_googleId = request.data['google_id']
+        temp_googleId = request.data["google_id"]
         try:
             if UserAddon.objects.filter(google_id=temp_googleId).exists():
                 user = UserAddon.objects.get(google_id=temp_googleId)
                 if not user.is_active:
                     return Response(
-                        {"message": "Google account is already linked to an blocked account.", "auth-status": "failure"},
+                        {
+                            "message": "Google account is already linked to an blocked account.",
+                            "auth-status": "failure",
+                        },
                         status=status.HTTP_400_BAD_REQUEST,
                     )
                 refresh = RefreshToken.for_user(user)
                 access_token = str(refresh.access_token)
                 refresh_token = str(refresh)
                 serializer = UserSerializer(user)
-                return Response({
-                    'message':'Welcome to studyzed', 'auth-status': 'success',
-                    'access_token':access_token, 'refresh_token':refresh_token, 'user': serializer.data
-                },status=status.HTTP_200_OK)
-                
-            dummy_password = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
+                return Response(
+                    {
+                        "message": "Welcome to studyzed",
+                        "auth-status": "success",
+                        "access_token": access_token,
+                        "refresh_token": refresh_token,
+                        "user": serializer.data,
+                    },
+                    status=status.HTTP_200_OK,
+                )
+
+            dummy_password = "".join(
+                random.choices(string.ascii_letters + string.digits, k=12)
+            )
             password = make_password(dummy_password)
             created = UserAddon.objects.create(
-                email=request.data['email'],
+                email=request.data["email"],
                 google_id=temp_googleId,
-                role=request.data['role'],
-                first_name = request.data['first_name'],
-                username=request.data['username'],
-                password= password, 
+                role=request.data["role"],
+                first_name=request.data["first_name"],
+                username=request.data["username"],
+                password=password,
             )
             refresh = RefreshToken.for_user(created)
             access_token = str(refresh.access_token)
             refresh_token = str(refresh)
             serializer = UserSerializer(created)
             print(access_token, refresh_token)
-            return Response({
-                "message": "Account created successfully",
-                "auth-status": "success", "refresh_token": refresh_token,
-                'access_token': access_token, 'user': serializer.data},
+            return Response(
+                {
+                    "message": "Account created successfully",
+                    "auth-status": "success",
+                    "refresh_token": refresh_token,
+                    "access_token": access_token,
+                    "user": serializer.data,
+                },
                 status=status.HTTP_200_OK,
-                )
-            
+            )
+
         except Exception as e:
-            print('Exception :', e)
+            print("Exception :", e)
             return Response(
                 {"message": f"Email verification failed {e}", "auth-status": "failure"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        
 
 
 ## USER SIGN-UP GOOGLE ACCOUNT }
@@ -307,7 +324,7 @@ class SignupWithGoogleAccountView(generics.CreateAPIView):
 
 class LoginView(APIView):
     permission_classes = [AllowAny]
-  
+
     def post(self, request, *args, **kwargs):
         try:
             user = self.UserAuthenticator(request.data)
@@ -343,8 +360,8 @@ class LoginView(APIView):
                 return response
             elif user is not None and not user.is_active:
                 return Response(
-                    {"error": "User is blocked",
-                     "auth-status":"blocked"}, status=status.HTTP_401_UNAUTHORIZED
+                    {"error": "User is blocked", "auth-status": "blocked"},
+                    status=status.HTTP_401_UNAUTHORIZED,
                 )
             else:
                 return Response(
@@ -379,21 +396,30 @@ class LoginView(APIView):
 
 ## USER FORGOTTEN PASSWORD {
 
+
 class ForgotPasswordEmailView(APIView):
     permission_classes = [AllowAny]
-    
+
     def post(self, request):
         try:
-            user = UserAddon.objects.get(email=request.data['email'])
+            user = UserAddon.objects.get(email=request.data["email"])
             if user is None:
-                return Response({"error": "Email not found, user not exisit",
-                                "message": "your account not found"}
-                                ,status=status.HTTP_404_NOT_FOUND)
+                return Response(
+                    {
+                        "error": "Email not found, user not exisit",
+                        "message": "your account not found",
+                    },
+                    status=status.HTTP_404_NOT_FOUND,
+                )
             if not user.is_active:
-                  return Response({"error": "User is unauthorized",
-                                  "message": "User is temporarly blocked, please contact the admin"}, 
-                                  status=status.HTTP_403_FORBIDDEN)
-            
+                return Response(
+                    {
+                        "error": "User is unauthorized",
+                        "message": "User is temporarly blocked, please contact the admin",
+                    },
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
             email_task = send_forgot_password_email(user.email)
             print("EMAIL TASK :", email_task)
             if not email_task["success"]:
@@ -403,73 +429,91 @@ class ForgotPasswordEmailView(APIView):
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
             # data = email_task
-            expires_at = timezone.make_aware(email_task['expires_at'], timezone=ZoneInfo('UTC'))
+            expires_at = timezone.make_aware(
+                email_task["expires_at"], timezone=ZoneInfo("UTC")
+            )
             print(type(expires_at))
             # print("REDIS : ",redis_client.hgetall(user.email))
-            return Response({
-                "message": "Email verification success",
-                "auth-status": "success",},
+            return Response(
+                {
+                    "message": "Email verification success",
+                    "auth-status": "success",
+                },
                 status=status.HTTP_200_OK,
-                )
-            
+            )
+
         except UserAddon.DoesNotExist:
             return Response(
-                {"error": "Email not found, user not exisit",
-                 "message": "Email not found, user not exisit"},
+                {
+                    "error": "Email not found, user not exisit",
+                    "message": "Email not found, user not exisit",
+                },
                 status=status.HTTP_404_NOT_FOUND,
             )
-       
+
 
 class ForgottenPasswordOTPView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        if request.data['email']:
-            redis_temp = redis_client.hgetall(request.data['email'])
+        if request.data["email"]:
+            redis_temp = redis_client.hgetall(request.data["email"])
             print("REDIS :", redis_temp)
-            if not request.data['otp'] == redis_temp['otp']:
-                print("ERROR : ",request.data['otp'], redis_temp['otp'])
-                return Response({
-                    "message": "OTP is incorrect",
-                    "auth-status": "failed",},
+            if not request.data["otp"] == redis_temp["otp"]:
+                print("ERROR : ", request.data["otp"], redis_temp["otp"])
+                return Response(
+                    {
+                        "message": "OTP is incorrect",
+                        "auth-status": "failed",
+                    },
                     status=status.HTTP_404_NOT_FOUND,
-                    )
+                )
             else:
-                redis_temp['is_authenticated'] = True
-                return Response({
-                    "message": "Email verification success",
-                    "auth-status": "success",},
+                redis_temp["is_authenticated"] = True
+                return Response(
+                    {
+                        "message": "Email verification success",
+                        "auth-status": "success",
+                    },
                     status=status.HTTP_200_OK,
-                    )
+                )
+
 
 class ForgottenPasswordNewPasswordiew(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        if request.data['email']:
-            redis_temp = redis_client.hgetall(request.data['email'])
-            if not redis_temp['is_authenticated']:
-                print("ERROR : ",request.data['otp'], redis_temp['otp'])
-                return Response({
-                    "message": "Password cannot be changed",
-                    "auth-status": "failed",},
+        if request.data["email"]:
+            redis_temp = redis_client.hgetall(request.data["email"])
+            if not redis_temp["is_authenticated"]:
+                print("ERROR : ", request.data["otp"], redis_temp["otp"])
+                return Response(
+                    {
+                        "message": "Password cannot be changed",
+                        "auth-status": "failed",
+                    },
                     status=status.HTTP_406_NOT_ACCEPTABLE,
-                    )
+                )
             else:
-                user = UserAddon.objects.get(email=request.data['email'])
-                if user.check_password(request.data['new_password']):
-                    return Response({
-                        "message": "Password is already the same",
-                        "auth-status": "failed",},
+                user = UserAddon.objects.get(email=request.data["email"])
+                if user.check_password(request.data["new_password"]):
+                    return Response(
+                        {
+                            "message": "Password is already the same",
+                            "auth-status": "failed",
+                        },
                         status=status.HTTP_409_CONFLICT,
-                        )
-                user.set_password(request.data['new_password'])
-                user.save()
-                return Response({
-                    "message": "Password changed successfully",
-                    "auth-status": "success",},
-                    status=status.HTTP_200_OK,
                     )
+                user.set_password(request.data["new_password"])
+                user.save()
+                return Response(
+                    {
+                        "message": "Password changed successfully",
+                        "auth-status": "success",
+                    },
+                    status=status.HTTP_200_OK,
+                )
+
 
 ## USER FORGOTTEN PASSWORD }
 
@@ -486,4 +530,3 @@ class SampleRequestChecker(APIView):
 
 
 ## USER SIGN-UP SAMPLE TOKEN CHECKER }
-

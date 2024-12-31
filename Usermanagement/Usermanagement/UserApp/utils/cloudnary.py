@@ -2,7 +2,8 @@ from cloudinary.uploader import upload
 
 
 def upload_file_to_cloudinary(
-        file, folder_name, public_id, width=None, height=None, crop=None):
+    file, folder_name, public_id, width=None, height=None, crop=None
+):
     try:
         cloudinary_response = upload(
             file,
@@ -13,6 +14,6 @@ def upload_file_to_cloudinary(
             height=height,
             crop=crop,
         )
-        return cloudinary_response['secure_url']
+        return cloudinary_response["secure_url"]
     except Exception as e:
         raise ValueError(f"File upload failed : {str(e)}")
