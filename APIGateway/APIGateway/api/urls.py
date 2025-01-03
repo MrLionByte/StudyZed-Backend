@@ -1,8 +1,6 @@
-from django.urls import path
+from django.urls import path, re_path
 from .views import APIgateView
 
 urlpatterns = [
-    
-    path('auth-app/', APIgateView.as_view(), name='api_gateway'),
-
+    path("<service>/<path:path>", APIgateView.as_view(), name="api_gateway"),
 ]

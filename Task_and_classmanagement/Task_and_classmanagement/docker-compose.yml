@@ -1,0 +1,30 @@
+# version: '3.8'
+services:
+  task_class_db:
+    container_name: task_class_db
+    image: postgres
+    ports:
+      - "5435:5433"
+    volumes:
+      - task_class_db:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=task_class_studyzed
+      - POSTGRES_USER=fmn
+      - POSTGRES_PASSWORD=mrlionbyte
+    
+  
+  task_class_management:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: task_class_management
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+    ports:
+      - "8006:8000"
+    depends_on:
+      - task_class_db
+
+volumes:
+  task_class_db:
