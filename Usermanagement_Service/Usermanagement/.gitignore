@@ -1,0 +1,6 @@
+.gitignore/
+.env
+/data/
+
+# Ignore virtual environments
+venv/

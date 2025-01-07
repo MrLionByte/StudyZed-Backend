@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 from dotenv import load_dotenv
 import os
+from .check_host import is_host_reachable
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -39,6 +41,16 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    
+    'class_management.class_teacher',
+    'class_management.class_student',
+    'class_management.class_admin',
+    
+    #REST FRAMEWORK
+    'rest_framework',
+    'rest_framework.authtoken',
+    'rest_framework_simplejwt.token_blacklist',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
@@ -75,14 +87,22 @@ WSGI_APPLICATION = 'Task_and_classmanagement.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+primary = ['task_class_db', 5433]
+secondary = ['localhost', 5432]
+
+db_connect_to = primary if is_host_reachable(primary[0], 5433) else secondary
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        "NAME": 'task_class_studyzed',
-        "USER": 'fmn',
-        "PASSWORD": 'mrlionbyte',
-        "HOST": 'task_class_db',
-        "PORT": 5433,
+        "NAME": os.getenv('DB_NAME'),
+        "USER": os.getenv('DB_USER'),
+        "PASSWORD": os.getenv('DB_PASSWORD'),
+        # "NAME": 'task_class_studyzed',
+        # "USER": 'fmn',
+        # "PASSWORD": 'mrlionbyte',
+        "HOST": db_connect_to[0],
+        "PORT": db_connect_to[1],
     }
 }
 
@@ -127,3 +147,19 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+]
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}
