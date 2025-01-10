@@ -39,7 +39,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     
     "session_fees",
-    "subscription",
+    "session_buy",
     "wallet",
     
 ]
@@ -79,9 +79,15 @@ WSGI_APPLICATION = "Payment.wsgi.application"
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        # "NAME": 'payment_management_studyzed',
+        "NAME": 'payment_studyzed',
+        "USER": 'fmn',
+        "PASSWORD": 'mrlionbyte',
+        # "HOST": 'localhost',
+        "HOST": 'payment_db',
+        "PORT": 5432,
     }
 }
 

@@ -25,7 +25,8 @@ SECRET_KEY = "django-insecure-w$x(jei@9o5#jfo)%dy@+x&fc6mq)xv-kn25a=9chkn1h3tza@
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
+
 
 
 # Application definition
@@ -37,6 +38,13 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    
+    "session_tutor",
+    
+    'rest_framework',
+    'rest_framework_simplejwt',
+    'corsheaders',
+    
 ]
 
 MIDDLEWARE = [
@@ -79,7 +87,9 @@ DATABASES = {
         "NAME": 'session_task_management_studyzed',
         "USER": 'fmn',
         "PASSWORD": 'mrlionbyte',
-        "HOST": 'localhost',
+        # "HOST": 'localhost',
+        # "PORT": 5432,
+        "HOST": "session_task_db",
         "PORT": 5432,
     }
 }

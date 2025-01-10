@@ -39,18 +39,29 @@ def send_forgot_password_email(recipient_email):
     return send
 
 
-# def resend_otp_verification_email(recipient_email):
-#     email_data = {
-#         "subject": "OTP resend for Email Verification - Study-Zed",
-#         "header": "Verify Your Email Address",
-#         "initial_otp": "Your Resend OTP code",
-#     }
-#     return send_email_template(
-#         recipient_list=recipient_email,
-#         subject=email_data["subject"],
-#         template_name="otp",
-#         email_data=email_data
-#     )
+@shared_task(name="AuthApp.mails.resend_otp_verification_email")
+def resend_otp_verification_email(recipient_email):
+    email_data = {
+        "subject": "RESEND OTP for Verification - Study-Zed",
+        "header": "REsend OTP to Verify Email",
+        "initial_otp": "Your new OTP code",
+    }
+    print("  MAX  3  :", email_data)
+    task = send_email_template(
+        recipient=recipient_email, template_name="otp", email_data=email_data
+    )
+    print("TASK :", task)
+    return {
+        "message": "Resend OTP verification process started",
+        "task": task,
+        "success": True,
+    }
+    return send_email_template(
+        recipient_list=recipient_email,
+        subject=email_data["subject"],
+        template_name="otp",
+        email_data=email_data
+    )
 
 
 # mails.py

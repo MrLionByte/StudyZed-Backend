@@ -1,30 +1,58 @@
 # version: '3.8'
 services:
-  task_class_db:
-    container_name: task_class_db
-    image: postgres
+  session_task_db:
+    container_name: session_task_db
+    image: postgres:16
     ports:
-      - "5435:5433"
+      - "5436:5432"
     volumes:
-      - task_class_db:/var/lib/postgresql/data
+      - session_task_db:/var/lib/postgresql/data
     environment:
-      - POSTGRES_DB=task_class_studyzed
+      - POSTGRES_DB=session_task_management_studyzed
       - POSTGRES_USER=fmn
-      - POSTGRES_PASSWORD=mrlionbyte
-    
+      - POSTGRES_PASSWORD=mrlionbyte 
   
-  task_class_management:
+  session_and_task_management:
+    container_name: session_and_task_management
     build: 
       context: .
       dockerfile: Dockerfile
-    container_name: task_class_management
     command: python manage.py runserver 0.0.0.0:8000
+    ports:
+      - "8009:8000"
+    depends_on:
+      - session_task_db
+      - kafka
     volumes:
       - .:/app
+  
+  zookeeper:
+    image: 'bitnami/zookeeper:latest'
+    container_name: zookeeper
     ports:
-      - "8006:8000"
+      - '2181:2181'
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+      - ZOO_LOG4J_PROP=log4j.rootLogger=OFF, stdout
+
+  kafka:
+    image: 'bitnami/kafka:latest'
+    container_name: kafka
+    ports:
+      - '9092:9092'
+    environment:
+      - KAFKA_BROKER_ID=1
+      - KAFKA_LISTENERS=PLAINTEXT://:9092
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_LOG4J_OPTS=-Dlog4j.rootLogger=OFF
     depends_on:
-      - task_class_db
+      - zookeeper
+    restart: on-failure
 
 volumes:
-  task_class_db:
+  session_task_db:
+  kafka_data:
+  zookeeper_data:
+

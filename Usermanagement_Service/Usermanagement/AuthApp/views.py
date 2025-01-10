@@ -6,7 +6,7 @@ from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from .serializers import *
 from rest_framework.views import APIView
-from .mails import send_verification_email, send_forgot_password_email
+from .mails import send_verification_email, send_forgot_password_email, resend_otp_verification_email
 from django.utils.timezone import now
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -155,38 +155,50 @@ class SignupOTPVerificationView(generics.CreateAPIView):
 @method_decorator(csrf_exempt, name="dispatch")
 class SignupOTPResendView(generics.CreateAPIView):
     permission_classes = [AllowAny]
-    serializer_class = OTPVerificationSerializer
+    serializer_class = EmailVerificationSerializer
 
     def post(self, request):
-
+        temp_mail = request.data["email"]
+        if Email_temporary.objects.filter(email=temp_mail).exists():
+            Email_temporary.objects.filter(email=temp_mail).delete()
         serializer = self.get_serializer(data=request.data)
         try:
-            user_under_verification = Email_temporary.objects.get(
-                email=request.data["email"]
+            email = temp_mail
+            print("SER EMAIl :", email)
+            email_task = resend_otp_verification_email.delay(email)
+            result = AsyncResult(email_task.id)
+            print("RESULT :", result.get(), "  :::: ", result.result)
+            if result.status == "PENDING":
+                print("WORKING ERROR")
+                return Response(
+                    {"error": "ERROR"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+            data = result.get()
+            expires_at = timezone.make_aware(
+                data["task"]["expires_at"], timezone=ZoneInfo("UTC")
+            )
+            print(type(expires_at))
+            print("REDIS : ", redis_client.hgetall(email))
+            new_temp_data = Email_temporary.objects.create(
+                email=email, otp=data["task"]["otp"], expires_at=expires_at
             )
 
-            if not serializer.is_valid():
-                print("Error", serializer.errors)
-                return Response(
-                    {"error": "Invalid data", "details": serializer.errors},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            # print(request.session['validationsteps'])
-            user_under_verification.is_authenticated = True
-            user_under_verification.save()
             return Response(
                 {
-                    "message": "OTP verified successfully. Email is confirmed.",
-                    "auth-status": "success",
+                    "message": "OTP resend successfully",
+                    "auth-status": "resend",
                 },
                 status=status.HTTP_200_OK,
             )
+
         except Exception as e:
+            print("Error details: ", e)
             return Response(
-                {"error": f"Faied to verify OTP:, {e}", "auth-status": "failed"},
+                {"message": f"OTP resend failed {e}", "auth-status": "failure"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
+        
 
 ## USER SIGN-UP OTP RESEND }
 
@@ -360,8 +372,8 @@ class LoginView(APIView):
                 return response
             elif user is not None and not user.is_active:
                 return Response(
-                    {"error": "User is blocked", "auth-status": "blocked"},
-                    status=status.HTTP_401_UNAUTHORIZED,
+                    {"error": "User is blocked", "message": "Logged is blocked", "auth-status": "blocked"},
+                    status=status.HTTP_403_FORBIDDEN,
                 )
             else:
                 return Response(
@@ -371,7 +383,7 @@ class LoginView(APIView):
         except Exception as e:
             print("Error in login: ", str(e))
             return Response(
-                {"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED
+                {"error": "Invalid credentials", "message": str(e)}, status=status.HTTP_401_UNAUTHORIZED
             )
 
     def UserAuthenticator(self, data):
@@ -381,11 +393,9 @@ class LoginView(APIView):
             user = UserAddon.objects.get(email=email)
             print(user, "GOTTTT")
             if user.check_password(password) and user.is_active:
-                print("111")
                 return user
             elif not user.is_active:
-                print("222")
-                return "User Blocked"
+                print("User is Blocked")
         except UserAddon.DoesNotExist:
             print("333")
             return None
