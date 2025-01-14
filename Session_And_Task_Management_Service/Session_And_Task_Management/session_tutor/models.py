@@ -14,11 +14,13 @@ class Session(models.Model):
     
     tutor_code = models.CharField(max_length=150)
     session_name = models.CharField(max_length=200)
+    session_grade = models.CharField(max_length=3, blank=True)
     session_duration = models.IntegerField(choices=SubscriptionType.choices)
     session_discription = models.TextField(blank=True)
     session_code = models.CharField(max_length=150, unique=True, editable=False)
     is_paid = models.BooleanField(default=False)
     is_active = models.BooleanField(default=False)
+    # auto_signin = models.BooleanField(default=False)
     image = CloudinaryField("image", blank=True)
     created_at = models.DateField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

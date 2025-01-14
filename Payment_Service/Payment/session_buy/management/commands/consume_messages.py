@@ -48,7 +48,7 @@ class Command(BaseCommand):
                             subscription_type=message_value.get('session_duration')
                         )
                         print(f"Session created with code: {session_code}")
-                time.sleep(5)
+                time.sleep(20)
         except KeyboardInterrupt:
             print("Consumer stopped.")
         finally:

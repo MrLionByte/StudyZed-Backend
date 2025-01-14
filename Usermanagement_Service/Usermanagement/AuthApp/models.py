@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator
 from cloudinary.models import CloudinaryField
+import uuid
 
 # Create your models here.
 
@@ -30,7 +31,15 @@ class UserAddon(AbstractUser):
         choices=ROLE_CHOICES, blank=False, null=False, max_length=15
     )
     google_id = models.CharField(max_length=255, blank=True)
-
+    user_code = models.CharField(max_length=15, blank=True)
+    
+    def save(self, *args, **kwargs):
+        if not self.user_code:
+            unique_id = str(uuid.uuid4())[:7].upper()
+            name_portion = ''.join(filter(str.isalnum, self.username))[:5].upper()
+            self.user_code = f"{name_portion}-{unique_id}"
+        super().save(*args, **kwargs)
+    
     def __str__(self):
         return self.username
 

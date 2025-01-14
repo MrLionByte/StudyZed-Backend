@@ -1,3 +1,4 @@
+import redis
 from AuthApp.models import UserAddon, Email_temporary
 from rest_framework import serializers
 from rest_framework.permissions import IsAuthenticated
@@ -10,6 +11,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth.models import User
 
+redis_client = redis.StrictRedis(host="redis", port=6379, db=0, decode_responses=True)
 
 class EmailVerificationSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
@@ -18,6 +20,9 @@ class EmailVerificationSerializer(serializers.Serializer):
         print("VAL :", value)
         if UserAddon.objects.filter(email=value).exists():
             raise serializers.ValidationError("Email already exists")
+        # redis_data = redis_client.hgetall(value)
+        # if redis_data.no_of_try > 5:
+        #     raise serializers.ValidationError("Exceeded number of tries for OTP.Try after 1 hour")
         return value
 
 
@@ -64,28 +69,18 @@ class PasswordResetSerializer(serializers.Serializer):
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
-    def validate(self, attrs):
-        print(":::222::::", attrs)
-        email = self.context["request"].data.get("email")
-        print(email)
-        password = attrs.get("password")
-        print(password)
-        user = UserAddon.objects.get(email=email)
-        print(":::::::", email, user)
-        if user is not None or not user.check_password(password):
-            raise serializers.ValidationError("Invalid email or password.")
-
-        attrs["username"] = user.username
-        return super().validate(attrs)
-
+        
     @classmethod
     def get_token(cls, user):
-        print("TOKEN MODIFY WORKING")
+        print("TOKEN MODIFY WORKING", user)
         token = super().get_token(user)
+        token['role'] = user.role
         token["email"] = user.email
-        print("TOKEN", token)
+        token['user_code']=user.user_code
+        print("TOKEN :", token)
         return token
 
+    
 
 class UserSerializer(serializers.ModelSerializer):
     username = serializers.CharField(required=True)

@@ -22,12 +22,13 @@ class CreateSessionView(generics.CreateAPIView):
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             
+            instance = serializer.save() #To save data in db
+            
             response_data = serializer.data
             response_data["session_code"] = instance.session_code
             response_data['created_on'] = instance.created_at.isoformat()
             print("Session Data before Kafka:", response_data)
             kafka_producer.producer_message('create-session', response_data["session_code"], response_data)
-            instance = serializer.save() #To save data in db
             return api_response(
                 status_code =status.HTTP_201_CREATED,
                 message = 'Session created successfully',

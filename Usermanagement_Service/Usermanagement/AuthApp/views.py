@@ -10,6 +10,7 @@ from .mails import send_verification_email, send_forgot_password_email, resend_o
 from django.utils.timezone import now
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
@@ -345,6 +346,7 @@ class LoginView(APIView):
             if user is not None and user.is_active:
                 refresh = RefreshToken.for_user(user)
                 access_token = str(refresh.access_token)
+                # access_token['extras'] = "adsadsdasdasdasdasdasdasdsd"
                 refresh_token = str(refresh)
                 print(access_token, refresh_token)
 
@@ -354,6 +356,7 @@ class LoginView(APIView):
                         "refresh_token": refresh_token,
                         "user": serializer.data,
                         "role": user.role,
+                        "user_code": user.user_code,
                         "message": "Logged in successfully",
                         "auth-status": "success",
                     },
@@ -402,6 +405,17 @@ class LoginView(APIView):
 
 
 ## USER LOGIN }
+
+
+## USER TOCKEN CREATER{
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
+    
+class CustomTokenRefreshView(TokenRefreshView):
+    pass
+
+## USER TOCKEN CREATER }
 
 
 ## USER FORGOTTEN PASSWORD {

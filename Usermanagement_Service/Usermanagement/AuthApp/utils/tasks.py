@@ -12,17 +12,28 @@ def generate_otp(email, length=6):
     created_at = datetime.now()
     expires_at = created_at + timedelta(minutes=5)
     key = f"{email}"
-    redis_client.hmset(
-        key,
-        {
-            "otp": otp,
-            "created_at": created_at.isoformat(),
-            "expires_at": expires_at.isoformat(),
-            "resend_count": 0,
-            "no_of_try": 0,
-            "is_authenticated": "False",
-            "is_blocked": "False",
-        },
-    )
+    if redis_client.hgetall(key):
+        redis_client.hmset(
+            key,
+            {
+                "otp": otp,
+                "created_at": created_at.isoformat(),
+                "expires_at": expires_at.isoformat(),
+            },
+        )
+    
+    else:
+        redis_client.hmset(
+            key,
+            {
+                "otp": otp,
+                "created_at": created_at.isoformat(),
+                "expires_at": expires_at.isoformat(),
+                "resend_count": 0,
+                "no_of_try": 0,
+                "is_authenticated": "False",
+                "is_blocked": "False",
+            },
+        )
     redis_client.expire(key, 24 * 60 * 60)
     return otp, created_at, expires_at

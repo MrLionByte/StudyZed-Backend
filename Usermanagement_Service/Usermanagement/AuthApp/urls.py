@@ -1,5 +1,4 @@
 from django.urls import path
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from .views import *
 
 urlpatterns = [
@@ -14,8 +13,8 @@ urlpatterns = [
         name="login_google_account",
     ),
     # DRF TOKEN ACCESS & REFRESH
-    path("user/token/", TokenObtainPairView.as_view(), name="token_obtain"),
-    path("user/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+    path("user/token/", CustomTokenObtainPairView.as_view(), name="token_obtain"),
+    path("user/refresh/", CustomTokenRefreshView.as_view(), name="token_refresh"),
     # LOGIN & FORGOT PASSWORD
     path("login/", LoginView.as_view(), name="login"),
     path(

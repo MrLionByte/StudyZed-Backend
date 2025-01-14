@@ -99,10 +99,23 @@ services:
     volumes:
       - kafka_data:/bitnami/kafka
     restart: on-failure
-    
+
+  # nginx:
+  #   container_name: nginx
+  #   image: nginx:latest
+  #   ports:
+  #     - "80:80"
+  #   depends_on:
+  #     - session_and_task_management
+  #     - payment_management
+  #     # - another_service
+  #   volumes:
+  #     - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+  #   restart: always
+
+
 volumes:
   session_task_db:
   payment_db:
   kafka_data:
   zookeeper_data:
-
