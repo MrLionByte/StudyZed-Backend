@@ -25,8 +25,9 @@ SECRET_KEY = "django-insecure-^cp9lwsxphs^uykgu1dzd$)5cy=1f_m9khg^v2r$1-zp#x=&(i
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
+# CORS
 
 # Application definition
 
@@ -42,9 +43,22 @@ INSTALLED_APPS = [
     "session_buy",
     "wallet",
     
+    "corsheaders",
+    
+    
 ]
 
+
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+]
+
+
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -133,5 +147,7 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-
 STRIPE_SECRET_KEY = "sk_test_51QhC68B0UgtY3KaYGZHsbaAt5hjoOoQuv31dzsriJIQklfCz3trvRXeUoAMwc00gf6N41rUoCPAgUVudsw2Pb6tA00tSdHHXzK"
+STRIPE_PUBLIC_KEY = "pk_test_51QhC68B0UgtY3KaYMUHZBqw2IUXOWzFwbcLU7OELMc2DGTgizxCwnkfgyp5U1hsIrszcs262iPDRbvJQDiosdHde00B7joTzjx"
+
+SITE_URL = 'http://localhost:5173'

@@ -7,8 +7,10 @@ class CreateSessionSerializers(serializers.ModelSerializer):
     class Meta:
         model = Session
         fields = [
-            "tutor_code", "session_name", "session_duration", "session_discription"
+            "tutor_code", "session_name", "session_duration", 
+            "session_discription", "session_code"
             ]
+        read_only_fields = ["session_code"]
     
     def validate_session_duration(self, value):
         if value not in dict(Session.SubscriptionType.choices):

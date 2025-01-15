@@ -51,7 +51,7 @@ class Payment(models.Model):
     subscription_key = models.ForeignKey(Subscription, on_delete=models.CASCADE)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     payment_date = models.DateField(auto_now_add=True)
-    transaction_id = models.CharField(max_length=100, unique=True)
+    transaction_id = models.CharField(max_length=100, unique=True, blank=True)
     status = models.CharField(max_length=20, choices=(
         ("success", "Success"), ("failed", "Failed"), ("pending", "Pending"), ('refunded', 'Refunded')
         ))
