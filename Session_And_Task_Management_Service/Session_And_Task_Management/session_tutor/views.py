@@ -3,7 +3,8 @@ from rest_framework import generics
 from rest_framework_simplejwt import authentication
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from .models import Session
-from .serializers import CreateSessionSerializers
+from students_in_session.models import StudentsInSession
+from .serializers import CreateSessionSerializers, TutorSessionSerializer, AllSessionInSessions
 from rest_framework.response import Response
 from rest_framework import status
 from .utils.responsses import api_response
@@ -69,3 +70,41 @@ class GetSessionView(generics.RetrieveAPIView):
     queryset = Session.objects.all()
     permission_classes = [AllowAny]
 
+
+class TutorsSessionsView(generics.ListAPIView):
+    serializer_class = TutorSessionSerializer
+    
+    def get_queryset(self):
+        print("111111")
+        tutor_code = self.request.query_params.get('tutor_code')
+        print("SESSIOn CODE :",tutor_code)
+        if not tutor_code:
+            raise ValidationError("tutor_code query parameter is required.")
+        
+        return Session.objects.filter(tutor_code=tutor_code)
+
+
+class StudentsInSessionView(generics.ListAPIView):
+    serializer_class = AllSessionInSessions
+    
+    def get_queryset(self):
+        session_code = self.request.query_params.get('session_code')
+        if not session_code:
+            raise ValidationError("tutor_code query parameter is required.")
+        session = Session.objects.get(session_code=session_code)
+        return StudentsInSession.objects.filter(session=session)
+
+class ApproveStudentToSessionView(generics.UpdateAPIView):
+    queryset = StudentsInSession.objects.all()
+    
+    def update(self, request, *args, **kwargs):
+        student = self.get_object()
+        print("GET OBJ :", student, student.is_allowded)
+        student.is_allowded = True
+        print(student.is_allowded)
+        student.save()
+        print(student.is_allowded)
+        return Response({"message": f"Successfully approved session {student.student_code}",
+                        'student_code': f'{student.student_code}' },
+                        status=status.HTTP_202_ACCEPTED)
+    

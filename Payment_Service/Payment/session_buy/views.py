@@ -9,7 +9,7 @@ import uuid
 from .models import Subscription, Payment
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-import stripe
+from django.views.decorators.http import require_POST
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 # print jwt token
@@ -22,8 +22,8 @@ class StripeCheckoutView(APIView):
             session_code = request.data.get('session_code')
             amount = int(request.data.get('amount'))*100  # Amount in cents (e.g., $10 = 1000)
 
-            session_key = Subscription.objects.get(session_code=session_code, tutor_code=tutor_code)
-            print("SESSIOn KEY :",session_key)
+            # session_key = Subscription.objects.get(session_code=session_code, tutor_code=tutor_code)
+            # print("SESSIOn KEY :",session_key)
             print("AS :: AS", amount, tutor_code, session_code)
             checkout_session = stripe.checkout.Session.create(
                 line_items=[
@@ -69,8 +69,15 @@ class StripeCheckoutView(APIView):
                  }, status=status.HTTP_502_BAD_GATEWAY
             )
 
-        
+
+class StripeWebHookView(APIView):
+    def post(self, request):
+        print("Working StripeWebHook")
+        return JsonResponse({"OK":"OK"})
+
+   
 @csrf_exempt
+@require_POST
 def stripe_webhook(request):
     print("STRIPE WORK 1")
     payload = request.body
@@ -85,25 +92,23 @@ def stripe_webhook(request):
             payload, sig_header, endpoint_secret
         )
 
-        # Handle the checkout.session.completed event
         if event['type'] == 'checkout.session.completed':
             
             print("STRIPE WORK 3")
             session = event['data']['object']
+            print("SESSion :" ,session)
             session_id = session['id']
             payment_intent = session.get('payment_intent')
 
             if payment_intent:
                 payment = stripe.PaymentIntent.retrieve(payment_intent)
 
-                # Find the subscription (session_code, tutor_code) using metadata from the session
                 tutor_code = session['metadata']['tutor_code']
                 session_code = session['metadata']['session_code']
                 amount = session['amount_total'] / 100  # Convert from cents to dollars
 
                 session_key = Subscription.objects.get(session_code=session_code, tutor_code=tutor_code)
 
-                # Now that the payment has been completed, create a Payment record
                 Payment.objects.create(
                     subscription_key=session_key,
                     amount=amount,
@@ -119,11 +124,9 @@ def stripe_webhook(request):
         return JsonResponse({'status': 'success'}, status=200)
 
     except ValueError as e:
-        # Invalid payload
         print("Invalid payload")
         return JsonResponse({'error': 'Invalid payload'}, status=400)
 
     except stripe.error.SignatureVerificationError as e:
-        # Invalid signature
         print("Signature verification failed")
         return JsonResponse({'error': 'Signature verification failed'}, status=400)

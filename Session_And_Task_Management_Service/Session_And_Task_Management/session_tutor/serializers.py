@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Session
+from students_in_session.models import StudentsInSession
 
 
 class CreateSessionSerializers(serializers.ModelSerializer):
@@ -31,3 +32,14 @@ class GetSessionSerializers(serializers.Serializer):
     class Meta:
         model = Session
         fields = ['__all__']
+
+
+class TutorSessionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Session
+        fields = "__all__"
+
+class AllSessionInSessions(serializers.ModelSerializer):
+    class Meta:
+        model = StudentsInSession
+        fields = "__all__"

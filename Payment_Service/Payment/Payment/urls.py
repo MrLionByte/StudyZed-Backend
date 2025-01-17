@@ -22,5 +22,6 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     
     path('session-buy/', include('session_buy.urls')),
+    path('payment-admin/', include('admin_app.urls')),
     
 ]

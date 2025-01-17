@@ -22,5 +22,8 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     
     path('session-tutor/', include('session_tutor.urls')),
+    path('session-student/', include('students_in_session.urls')),
+    
+    path('session-admin/', include('admin_app.urls')),
     
 ]

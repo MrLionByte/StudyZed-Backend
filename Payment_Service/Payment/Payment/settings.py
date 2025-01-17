@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "session_fees",
     "session_buy",
     "wallet",
+    "admin_app",
     
     "corsheaders",
     
@@ -149,5 +150,8 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 STRIPE_SECRET_KEY = "sk_test_51QhC68B0UgtY3KaYGZHsbaAt5hjoOoQuv31dzsriJIQklfCz3trvRXeUoAMwc00gf6N41rUoCPAgUVudsw2Pb6tA00tSdHHXzK"
 STRIPE_PUBLIC_KEY = "pk_test_51QhC68B0UgtY3KaYMUHZBqw2IUXOWzFwbcLU7OELMc2DGTgizxCwnkfgyp5U1hsIrszcs262iPDRbvJQDiosdHde00B7joTzjx"
+STRIPE_WEBHOOK_SECRET = "whsec_43e0be7084d33069be459064b9b61e45a6976f2eb579408f20cab7107cbd550c"
+# stripe listen --forward-to http://127.0.0.1:8008/session-buy/stripe-webhook/
 
 SITE_URL = 'http://localhost:5173'
+
