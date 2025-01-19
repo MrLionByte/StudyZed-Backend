@@ -26,8 +26,10 @@ class AdminTokenObtainPairSerializer(TokenObtainPairSerializer):
             user = UserAddon.objects.get(username=username)
             
             if not user.check_password(password):
-                raise serializers.ValidationError('Invalid username or password.')
+                print("password error")
+                raise serializers.ValidationError('Invalid password.')
             if not user.is_superuser:
+                print("not admin error")
                 raise serializers.ValidationError('User is not a admin.')
             attrs['user'] = user
             return super().validate(attrs)

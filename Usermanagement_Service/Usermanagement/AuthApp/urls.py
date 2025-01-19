@@ -12,9 +12,11 @@ urlpatterns = [
         SignupWithGoogleAccountView.as_view(),
         name="login_google_account",
     ),
+    
     # DRF TOKEN ACCESS & REFRESH
-    path("user/token/", CustomTokenObtainPairView.as_view(), name="token_obtain"),
+    # path("user/token/", CustomTokenObtainPairView.as_view(), name="token_obtain"),
     path("user/refresh/", CustomTokenRefreshView.as_view(), name="token_refresh"),
+    
     # LOGIN & FORGOT PASSWORD
     path("login/", LoginView.as_view(), name="login"),
     path(
@@ -32,5 +34,7 @@ urlpatterns = [
         ForgottenPasswordNewPasswordiew.as_view(),
         name="forgot_password_new_password",
     ),
+    
+    # LOGOUT 
     path("logout/", LogoutView.as_view(), name="sample"),
 ]

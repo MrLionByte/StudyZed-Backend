@@ -20,7 +20,8 @@ class AdminLoginView(APIView):
         serializer = AdminTokenObtainPairSerializer(data=request.data, context={'request': request})
         print("1111",serializer)
         try:
-            serializer.is_valid(raise_exception=True)
+            data = serializer.is_valid()
+            print("DATA ", data, serializer.errors)
             user = UserAddon.objects.get(username=request.data.get("username"))
             admin_data_serializer = AdminSerializer(user)
             refresh = RefreshToken.for_user(user)
@@ -39,12 +40,24 @@ class AdminLoginView(APIView):
             )
             return response
         
+        except ObjectDoesNotExist:
+            return Response(
+                {"error": "User not found", "auth-status": "failed"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        
+        except ValidationError as e:
+            return Response(
+                {"error": str(e), "auth-status": "failed"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         except Exception as e:
-            error_message = str(e.detail if hasattr(e, 'detail') else e)
-            print(error_message, e)
+            error_message = str(e)
+            print("Error occurred:", error_message)
             return Response(
                 {"error": error_message, "auth-status": "failed"},
-                status=status.HTTP_401_UNAUTHORIZED,
+                status=status.HTTP_400_BAD_REQUEST,
             )
         
 
