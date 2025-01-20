@@ -10,6 +10,7 @@ from django.utils.dateparse import parse_datetime
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth.models import User
+from django.contrib.auth.hashers import check_password
 
 redis_client = redis.StrictRedis(host="redis", port=6379, db=0, decode_responses=True)
 
@@ -66,20 +67,6 @@ class PasswordResetSerializer(serializers.Serializer):
         if not UserAddon.objects.filter(email=value).exists():
             raise serializers.ValidationError("User with this email does not exist.")
         return value
-
-
-class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
-        
-    @classmethod
-    def get_token(cls, user):
-        print("TOKEN MODIFY WORKING", user)
-        token = super().get_token(user)
-        token['role'] = user.role
-        token["email"] = user.email
-        token['user_code']=user.user_code
-        print("TOKEN :", token)
-        return token
-
     
 
 class UserSerializer(serializers.ModelSerializer):
@@ -110,3 +97,47 @@ class UserSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         return super().update(instance, validated_data)
+
+class LoginSerilizer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+    password = serializers.CharField(write_only=True, required=True)
+    
+    def validate(self, data):
+        email = data.get('email')
+        password = data.get('password')
+        try:
+            user = UserAddon.objects.get(email=email)
+            if  not check_password(password, user.password):
+                raise serializers.ValidationError({
+                    "message": "Incorrect password.",
+                    "auth-status": "password-failed", 
+                    "field": "password"})
+            if not user.is_active:
+                raise serializers.ValidationError({
+                    "message": "User is blocked",
+                    "auth-status": "user-blocked", 
+                    "field": "status"})
+            data["user"] = user
+            return data
+        except UserAddon.DoesNotExist:
+            raise serializers.ValidationError(
+                {"message": "User does not exist.",
+                 "auth-status": "user-notexsist", 
+                 "field": "email"}
+            )
+
+        
+
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+        
+    @classmethod
+    def get_token(cls, user):
+        print("TOKEN MODIFY WORKING", user)
+        token = super().get_token(user)
+        token['role'] = user.role
+        token["email"] = user.email
+        token['user_code']=user.user_code
+        print("TOKEN :", token)
+        return token
+

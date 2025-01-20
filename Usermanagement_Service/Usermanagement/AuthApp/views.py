@@ -338,23 +338,80 @@ class SignupWithGoogleAccountView(generics.CreateAPIView):
 class LoginView(APIView):
     permission_classes = [AllowAny]
 
-    def post(self, request, *args, **kwargs):
-        try:
-            user = self.UserAuthenticator(request.data)
-            serializer = UserSerializer(user)
-            print("USER :", user)
-            if user is not None and user.is_active:
-                refresh = RefreshToken.for_user(user)
-                access_token = str(refresh.access_token)
-                # access_token['extras'] = "adsadsdasdasdasdasdasdasdsd"
-                refresh_token = str(refresh)
-                print(access_token, refresh_token)
+    # def post(self, request, *args, **kwargs):
+    #     try:
+    #         user = self.UserAuthenticator(request.data)
+    #         serializer = UserSerializer(user)
+    #         print("USER :", user)
+    #         if user is not None and user.is_active:
+    #             refresh = RefreshToken.for_user(user)
+    #             access_token = str(refresh.access_token)
+    #             # access_token['extras'] = "adsadsdasdasdasdasdasdasdsd"
+    #             refresh_token = str(refresh)
+    #             print(access_token, refresh_token)
 
-                response = Response(
+    #             response = Response(
+    #                 {
+    #                     "access_token": access_token,
+    #                     "refresh_token": refresh_token,
+    #                     "user": serializer.data,
+    #                     "role": user.role,
+    #                     "user_code": user.user_code,
+    #                     "message": "Logged in successfully",
+    #                     "auth-status": "success",
+    #                 },
+    #                 status=status.HTTP_200_OK,
+    #             )
+    #             print("RESPONSE :", response)
+    #             response.set_cookie(
+    #                 key="access_token",
+    #                 value=access_token,
+    #                 httponly=True,
+    #                 secure=True,
+    #             )
+    #             response.set_cookie(
+    #                 key="refresh_token", value=refresh_token, httponly=True, secure=True
+    #             )
+    #             return response
+    #         elif user is not None and not user.is_active:
+    #             return Response(
+    #                 {"error": "User is blocked", "message": "Logged is blocked", "auth-status": "blocked"},
+    #                 status=status.HTTP_403_FORBIDDEN,
+    #             )
+    #         else:
+    #             return Response(
+    #                 {"error": "Invalid credentials"},
+    #                 status=status.HTTP_401_UNAUTHORIZED,
+    #             )
+    #     except Exception as e:
+    #         print("Error in login: ", str(e))
+    #         return Response(
+    #             {"error": "Invalid credentials", "message": str(e)}, status=status.HTTP_401_UNAUTHORIZED
+    #         )
+    
+    def post(self, request, *args, **kwargs):
+        serializer = LoginSerilizer(data = request.data)
+        
+        if serializer.is_valid():
+            
+            user = serializer.validated_data["user"]
+            print("VIEw :",user)
+            refresh = RefreshToken.for_user(user)
+            access_token = str(refresh.access_token)
+            refresh_token = str(refresh)
+            
+            response = Response(
                     {
                         "access_token": access_token,
                         "refresh_token": refresh_token,
-                        "user": serializer.data,
+                        "user": {
+                                "id": user.id,
+                                "email": user.email,
+                                "first_name": user.first_name,
+                                "last_name": user.last_name,
+                                "username": user.username,
+                                "role": user.role,
+                            },
                         "role": user.role,
                         "user_code": user.user_code,
                         "message": "Logged in successfully",
@@ -362,46 +419,35 @@ class LoginView(APIView):
                     },
                     status=status.HTTP_200_OK,
                 )
-                print("RESPONSE :", response)
-                response.set_cookie(
-                    key="access_token",
-                    value=access_token,
-                    httponly=True,
-                    secure=True,
+            response.set_cookie(
+                    key="access_token", value=access_token, httponly=True, secure=True
                 )
-                response.set_cookie(
+            response.set_cookie(
                     key="refresh_token", value=refresh_token, httponly=True, secure=True
                 )
-                return response
-            elif user is not None and not user.is_active:
-                return Response(
-                    {"error": "User is blocked", "message": "Logged is blocked", "auth-status": "blocked"},
-                    status=status.HTTP_403_FORBIDDEN,
-                )
-            else:
-                return Response(
-                    {"error": "Invalid credentials"},
-                    status=status.HTTP_401_UNAUTHORIZED,
-                )
-        except Exception as e:
-            print("Error in login: ", str(e))
-            return Response(
-                {"error": "Invalid credentials", "message": str(e)}, status=status.HTTP_401_UNAUTHORIZED
-            )
+            return response
+        else:
+            errors = serializer.errors
+            error_response = {
+                    "status": "error",
+                    "message": "Validation failed",
+                    "errors": errors,
+            }
+            return Response(error_response, status=status.HTTP_400_BAD_REQUEST)
 
-    def UserAuthenticator(self, data):
-        email = data.get("email")
-        password = data.get("password")
-        try:
-            user = UserAddon.objects.get(email=email)
-            print(user, "GOTTTT")
-            if user.check_password(password) and user.is_active:
-                return user
-            elif not user.is_active:
-                print("User is Blocked")
-        except UserAddon.DoesNotExist:
-            print("333")
-            return None
+    # def UserAuthenticator(self, data):
+    #     email = data.get("email")
+    #     password = data.get("password")
+    #     try:
+    #         user = UserAddon.objects.get(email=email)
+    #         print(user, "GOTTTT")
+    #         if user.check_password(password) and user.is_active:
+    #             return user
+    #         elif not user.is_active:
+    #             print("User is Blocked")
+    #     except UserAddon.DoesNotExist:
+    #         print("333")
+    #         return None
 
 
 ## USER LOGIN }
