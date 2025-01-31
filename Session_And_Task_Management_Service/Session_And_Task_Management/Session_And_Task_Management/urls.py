@@ -19,10 +19,14 @@ from django.contrib import admin
 from django.urls import path, include
 
 urlpatterns = [
+    
     path("admin/", admin.site.urls),
     
     path('session-tutor/', include('session_tutor.urls')),
+    path('assessment-tutor/', include('assessment_tutor_side.urls')),
+    
     path('session-student/', include('students_in_session.urls')),
+    path('assessment-student/', include('assessment_student_side.urls')),
     
     path('session-admin/', include('admin_app.urls')),
     

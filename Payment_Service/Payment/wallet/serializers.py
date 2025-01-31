@@ -39,10 +39,11 @@ from .models import Wallet, WalletTransactions
 class WalletTransactionsViewSerializer(serializers.ModelSerializer):
     class Meta:
         model = WalletTransactions
-        fields = ['tranaction_type', 'tickets', 'amount', 'note', 'status', 'currency', 'transaction_id', 'tranaction_date']
+        fields = ['id' ,'transaction_type', 'tickets', 'amount', 'note', 'status', 'currency', 'transaction_id', 'transaction_date']
     
 class WalletViewSerializer(serializers.ModelSerializer):
-    wallet_transactions = WalletTransactionsViewSerializer(many=True, readonly=True)    
+    wallet_transactions = WalletTransactionsViewSerializer(many=True, read_only=True)    
     class Meta:
         model = Wallet
-        fields = ['account_number', 'balance', 'is_blocked', 'updated_at', 'currency_mode', 'wallet_transactions']
+        fields = ['account_number', 'balance', 'is_blocked', 'auto_credit', 'auto_debit',
+                  'updated_at', 'currency_mode', 'wallet_transactions']

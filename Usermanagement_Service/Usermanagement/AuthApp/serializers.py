@@ -7,10 +7,11 @@ from django.utils.timezone import now
 from datetime import datetime
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import check_password
+from rest_framework_simplejwt.tokens import AccessToken
 
 redis_client = redis.StrictRedis(host="redis", port=6379, db=0, decode_responses=True)
 
@@ -141,3 +142,20 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         print("TOKEN :", token)
         return token
 
+class CustomTokenRefreshSerializer(TokenRefreshSerializer):
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        decoded_payload = AccessToken(data['access'])
+
+        user_uid = decoded_payload['user_id']
+        
+        user = UserAddon.objects.get(id=user_uid)
+        
+        # Add custom fields to the response
+        decoded_payload['role'] = user.role
+        decoded_payload['email'] = user.email
+        decoded_payload['user_code'] = user.user_code
+        
+        # Generate a new access token with updated claims
+        data['access'] = str(decoded_payload)
+        return data

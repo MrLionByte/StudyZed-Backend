@@ -27,5 +27,6 @@ urlpatterns = [
     
     path('auth-app/', include('AuthApp.urls')),
     path('user-app/', include('UserApp.urls')),
+    path('class-app/', include('Class_app.urls')),
     path('admin-app/', include('Admin_app.urls')),
 ]

@@ -396,9 +396,10 @@ class LoginView(APIView):
             
             user = serializer.validated_data["user"]
             print("VIEw :",user)
-            refresh = RefreshToken.for_user(user)
-            access_token = str(refresh.access_token)
-            refresh_token = str(refresh)
+            token_serializer = CustomTokenObtainPairSerializer.get_token(user)
+            
+            access_token = str(token_serializer.access_token)
+            refresh_token = str(RefreshToken.for_user(user))
             
             response = Response(
                     {
@@ -459,7 +460,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
     
 class CustomTokenRefreshView(TokenRefreshView):
-    pass
+    serializer_class = CustomTokenRefreshSerializer
 
 ## USER TOCKEN CREATER }
 

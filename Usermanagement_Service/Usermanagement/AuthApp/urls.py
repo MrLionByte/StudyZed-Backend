@@ -14,7 +14,7 @@ urlpatterns = [
     ),
     
     # DRF TOKEN ACCESS & REFRESH
-    # path("user/token/", CustomTokenObtainPairView.as_view(), name="token_obtain"),
+    path("user/token/", CustomTokenObtainPairView.as_view(), name="token_obtain"),
     path("user/refresh/", CustomTokenRefreshView.as_view(), name="token_refresh"),
     
     # LOGIN & FORGOT PASSWORD

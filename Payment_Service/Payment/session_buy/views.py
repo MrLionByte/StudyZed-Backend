@@ -10,10 +10,15 @@ from .models import Subscription, Payment
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
+from django.conf import settings
+from .permissions import TutorAccessPermission
+from wallet.models import WalletTransactions, Wallet
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 # print jwt token
 class StripeCheckoutView(APIView):
+    permission_classes = [TutorAccessPermission]
+    
     def post(self, request):
         try:
             print("REQUESt DAAT :",request.data)
@@ -75,7 +80,7 @@ class StripeWebHookView(APIView):
         print("Working StripeWebHook")
         return JsonResponse({"OK":"OK"})
 
-   
+  
 @csrf_exempt
 @require_POST
 def stripe_webhook(request):
@@ -130,3 +135,58 @@ def stripe_webhook(request):
     except stripe.error.SignatureVerificationError as e:
         print("Signature verification failed")
         return JsonResponse({'error': 'Signature verification failed'}, status=400)
+    
+    
+class PayForSessionUsingWalletView(APIView):
+    # permission_classes = [TutorAccessPermission]
+    
+    def post(self, request):
+        try:
+            print("REQUESt DAAT :",request.data)
+            session_name = request.data.get('session_name')
+            tutor_code = request.data.get('tutor_code')
+            session_code = request.data.get('session_code')
+            amount = int(request.data.get('amount'))  # Amount in cents (e.g., $10 = 1000)
+
+            
+            wallet, created = Wallet.objects.get_or_create(user_code=tutor_code);
+            print(wallet, "::",amount, "::",wallet.balance)
+            if wallet.balance < amount:
+                return Response({
+                "payment-status": "insufficient-balance"
+            }, status=status.HTTP_402_PAYMENT_REQUIRED)
+
+            wallet_transaction = WalletTransactions.objects.create(
+                wallet_key=wallet,
+                transaction_type="DEBIT",
+                amount=amount,
+                status="Pending"
+            )
+            print("SUB :",tutor_code, session_code)
+            session_key = Subscription.objects.get(session_code=session_code, tutor_code=tutor_code)
+            print("SES K :", session_key)
+            subscription_payment = Payment.objects.create(
+                    subscription_key=session_key,
+                    amount=amount,
+                    status="success",
+                )
+            
+            if subscription_payment.status == 'success':
+                wallet_transaction.status = "Completed"
+            elif subscription_payment.status == 'failed':
+                wallet_transaction.status = "Failed"
+            wallet_transaction.save()
+
+            return Response({
+                "payment": subscription_payment,
+                "payment-status": "success"
+            }, status=status.HTTP_201_CREATED)
+            
+        except Exception as e:
+            print(e)
+            return Response({
+                "error": str(e),
+                "payment-status": "failed"
+                } 
+            ,status=status.HTTP_400_BAD_REQUEST)
+            

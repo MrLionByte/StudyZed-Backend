@@ -47,7 +47,8 @@ INSTALLED_APPS = [
     
     'AuthApp',
     'UserApp',
-    'Admin_app', 
+    'Admin_app',
+    'Class_app',
     
     # To use Django REST Framework
     'rest_framework',
@@ -206,9 +207,11 @@ REST_FRAMEWORK = {
     ),
 }
 
+print("ACCESS TIME",os.getenv('ACCESS_TOKEN_LIFETIME'))
+
 SIMPLE_JWT = {
     
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=int(os.getenv('ACCESS_TOKEN_LIFETIME',1660))),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=int(os.getenv('ACCESS_TOKEN_LIFETIME',1))),
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=int(os.getenv('REFRESH_TOKEN_LIFETIME',1))),
     
     'SLIDING_TOKEN_LIFETIME': timedelta(days=30),
@@ -235,10 +238,9 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 
 # Cloudinary Configuration
 cloudinary.config( 
-    cloud_name = "djv9jwwem", 
-    api_key = "538373721727889", 
-    api_secret = "mUlGQjdF0aVrZSOVAZpwrB2zVjY", # Click 'View API Keys' above to copy your API secret
-    secure=True
+    cloud_name = os.environ.get('cloudinary_cloud_name'), 
+    api_key = os.environ.get('cloudinary_api_key'), 
+    api_secret = os.environ.get('cloudinary_api_secret'),
+    secure=os.environ.get('cloudinary_secure')
 )
-
 

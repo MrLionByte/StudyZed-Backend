@@ -10,11 +10,18 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+from dotenv import load_dotenv
+import os
+
 from pathlib import Path
 import cloudinary, cloudinary.uploader, cloudinary.api
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+env_path = BASE_DIR / '.env'
+load_dotenv(dotenv_path=env_path)
 
 
 # Quick-start development settings - unsuitable for production
@@ -45,9 +52,11 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     
     "session_tutor",
+    "assessment_tutor_side",
     "admin_app",
     "cart",
     "students_in_session",
+    "assessment_student_side",
     
     'cloudinary',
     'rest_framework',
@@ -96,12 +105,12 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         "NAME": 'session_task_management_studyzed',
-        "USER": 'fmn',
-        "PASSWORD": 'mrlionbyte',
+        "USER":  os.getenv('DB_USER'),
+        "PASSWORD":  os.getenv('DB_PASSWORD'),
         # "HOST": 'localhost',
         # "PORT": 5432,
-        "HOST": "session_task_db",
-        "PORT": 5432,
+        "HOST":  os.getenv('DB_HOST'),
+        "PORT":  os.getenv('DB_PORT'),
     }
 }
 
@@ -145,3 +154,5 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY')

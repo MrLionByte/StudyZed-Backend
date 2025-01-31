@@ -23,5 +23,6 @@ urlpatterns = [
     
     path('session-buy/', include('session_buy.urls')),
     path('payment-admin/', include('admin_app.urls')),
+    path('wallet/', include('wallet.urls')),
     
 ]

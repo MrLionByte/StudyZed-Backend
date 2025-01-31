@@ -62,8 +62,7 @@ class AdminLoginView(APIView):
         
 
 class AdminAllTutorsListView(generics.ListAPIView):
-    # permission_classes = [IsAdminUser]
-    permission_classes = [AllowAny]
+    permission_classes = [IsAdminUser]
     serializer_class = UserAddonSerializer
 
     def get_queryset(self):
@@ -71,8 +70,7 @@ class AdminAllTutorsListView(generics.ListAPIView):
 
 
 class AdminAllStudentsListView(generics.ListAPIView):
-    # permission_classes = [IsAdminUser]
-    permission_classes = [AllowAny]
+    permission_classes = [IsAdminUser]
     serializer_class = UserAddonSerializer
     
     def get_queryset(self):
@@ -83,8 +81,7 @@ class AdminAllStudentsListView(generics.ListAPIView):
 class AdminBlockUserView(generics.UpdateAPIView):
     queryset = UserAddon.objects.all()
     serializer_class = UserBlockSerializer
-    # permission_classes = [IsAdminUser]
-    permission_classes = [AllowAny]
+    permission_classes = [IsAdminUser]
 
     def update(self, request, *args, **kwargs):
         user = self.get_object()

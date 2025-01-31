@@ -70,6 +70,16 @@ services:
       - ./Payment_Service/Payment:/app
     # command: supervisord -c /etc/supervisor/conf.d/supervisord.conf
 
+  messages_management:
+    container_name: messages_management
+    build: 
+      context: ./Message_And_Video_Service/Message
+      dockerfile: Dockerfile
+    command: daphne -b 0.0.0.0 -p 8000 Message.asgi:application
+    ports:
+      - "8006:8000"
+    volumes:
+      - ./Message_And_Video_Service/Message:/app
 
   zookeeper:
     image: 'bitnami/zookeeper:latest'

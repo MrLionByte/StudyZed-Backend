@@ -9,21 +9,25 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
+from dotenv import load_dotenv
+import os
 
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+env_path = BASE_DIR / '.env'
+load_dotenv(dotenv_path=env_path)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-^cp9lwsxphs^uykgu1dzd$)5cy=1f_m9khg^v2r$1-zp#x=&(i"
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG')
 
 ALLOWED_HOSTS = ['*']
 
@@ -93,16 +97,17 @@ WSGI_APPLICATION = "Payment.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         # "NAME": 'payment_management_studyzed',
         "NAME": 'payment_studyzed',
-        "USER": 'fmn',
-        "PASSWORD": 'mrlionbyte',
+        "USER": os.getenv('DB_USER'),
+        "PASSWORD": os.getenv('DB_PASSWORD'),
         # "HOST": 'localhost',
-        "HOST": 'payment_db',
-        "PORT": 5432,
+        "HOST": os.getenv('DB_HOST'),
+        "PORT": os.getenv('DB_PORT'),
     }
 }
 
@@ -148,10 +153,13 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-STRIPE_SECRET_KEY = "sk_test_51QhC68B0UgtY3KaYGZHsbaAt5hjoOoQuv31dzsriJIQklfCz3trvRXeUoAMwc00gf6N41rUoCPAgUVudsw2Pb6tA00tSdHHXzK"
-STRIPE_PUBLIC_KEY = "pk_test_51QhC68B0UgtY3KaYMUHZBqw2IUXOWzFwbcLU7OELMc2DGTgizxCwnkfgyp5U1hsIrszcs262iPDRbvJQDiosdHde00B7joTzjx"
-STRIPE_WEBHOOK_SECRET = "whsec_43e0be7084d33069be459064b9b61e45a6976f2eb579408f20cab7107cbd550c"
+STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY')
+STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY')
+STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET')
+
 # stripe listen --forward-to http://127.0.0.1:8008/session-buy/stripe-webhook/
+# stripe listen --forward-to http://127.0.0.1:8008/wallet/stripe-webhook/
 
 SITE_URL = 'http://localhost:5173'
 
+JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY')

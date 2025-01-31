@@ -52,7 +52,7 @@ class Command(BaseCommand):
                             )
                             print(f"Session created with code: {session_code}")
                 print(f"Sleeping at: {datetime.datetime.now()}")
-                time.sleep(10)
+                time.sleep(5)
                 print(f"Woke up at: {datetime.datetime.now()}")
                 
         except KeyboardInterrupt:
