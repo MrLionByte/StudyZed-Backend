@@ -3,6 +3,7 @@ from django.urls import path
 
 urlpatterns = [
 
-    # path('create-checkout-session/', StripeCheckoutView.as_view()),
+    path('get-all-subscriptions-amount/', GetAllSubscriptionAmountsView.as_view()),
+    path("update-amount/<str:pk>/", ChangeSubscriptionAmountView.as_view()),
 
 ]

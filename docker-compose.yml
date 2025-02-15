@@ -76,6 +76,8 @@ services:
       context: ./Message_And_Video_Service/Message
       dockerfile: Dockerfile
     command: daphne -b 0.0.0.0 -p 8000 Message.asgi:application
+    environment:
+      - DJANGO_SETTINGS_MODULE=Message.settings
     ports:
       - "8006:8000"
     volumes:
@@ -110,6 +112,14 @@ services:
       - kafka_data:/bitnami/kafka
     restart: on-failure
 
+  redis:
+    image: redis:6-alpine
+    container_name: redis_service_2
+    ports:
+      - "6378:6379"
+    volumes:
+      - redis_data:/data
+
   # nginx:
   #   container_name: nginx
   #   image: nginx:latest
@@ -129,3 +139,4 @@ volumes:
   payment_db:
   kafka_data:
   zookeeper_data:
+  redis_data:

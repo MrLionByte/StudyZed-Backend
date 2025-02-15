@@ -99,7 +99,7 @@ class UserSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         return super().update(instance, validated_data)
 
-class LoginSerilizer(serializers.Serializer):
+class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
     password = serializers.CharField(write_only=True, required=True)
     
@@ -151,11 +151,11 @@ class CustomTokenRefreshSerializer(TokenRefreshSerializer):
         
         user = UserAddon.objects.get(id=user_uid)
         
-        # Add custom fields to the response
+
         decoded_payload['role'] = user.role
         decoded_payload['email'] = user.email
         decoded_payload['user_code'] = user.user_code
         
-        # Generate a new access token with updated claims
+
         data['access'] = str(decoded_payload)
         return data

@@ -23,3 +23,30 @@ class AssessmentsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Assessments
         fields = "__all__"
+
+class AssessmentResponseSerializer(serializers.Serializer):
+    question_id = serializers.IntegerField(required=False)
+    question_type = serializers.ChoiceField(choices=["OPEN", "MULTIPLE_CHOICE","SINGLE_CHOICE"])
+    answer = serializers.CharField(required=False)
+
+class AttendAssessmentSerializers(serializers.Serializer):
+    assessment_id = serializers.IntegerField(required=False)
+    responses = AssessmentResponseSerializer(many=True)
+    
+    def validate(self, value):
+        if not Assessments.objects.filter(id=value).exists():
+            raise serializers.ValidationError("Invalid Assessment ID")
+        return value
+
+
+class GetAttendedAssessmentResponsesSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = StudentAssessmentResponse
+        fields = "__all__"
+
+class GetAttendedAssessmentsSerializers(serializers.ModelSerializer):
+    responses = GetAttendedAssessmentResponsesSerializers(many=True)
+    class Meta:
+        model = StudentAssessment
+        fields = "__all__"
+    

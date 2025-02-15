@@ -4,19 +4,31 @@ from pymongo.server_api import ServerApi
 from django.conf import settings
 from datetime import datetime, timezone
 
-from mongoengine import (Document, StringField, 
+from mongoengine import (Document, StringField, IntField,
                          ReferenceField, DateTimeField, 
                          ListField, CASCADE, BooleanField)
 
 class User(Document):
-    user_id = StringField(required=True)
-    user_code = StringField(required=True)
-    user_role = StringField(required=True)
-    email = StringField(required=True)
+    user_id = IntField(unique=True)
+    user_code = StringField()
+    user_role = StringField()
+    email = StringField()
 
+    @property
+    def is_anonymous(self):
+        return False
+        
+    @property
+    def id(self):
+        return self.user_id
+    
+    @property
+    def code(self):
+        return self.user_code
+    
 class OneToOneMessage(Document):
-    sender = ReferenceField(User, required=True)  
-    recipient = ReferenceField(User, required=True)  
+    sender = ReferenceField(User, reverse_delete_rule=2)  
+    recipient = ReferenceField(User, reverse_delete_rule=2) 
     content = StringField(required=True) 
     timestamp = DateTimeField(default=datetime.now(timezone.utc))  
 

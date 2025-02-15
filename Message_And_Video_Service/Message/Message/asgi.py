@@ -14,41 +14,40 @@ from django.core.asgi import get_asgi_application
 from channels.auth import AuthMiddlewareStack
 from Chat.routing import websocket_urlpatterns
 from channels.security.websocket import AllowedHostsOriginValidator
-
+from Chat.channels_middleware  import JWTForWebsocketMiddleware
 
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "Message.settings")
 
-django_asgi_app = get_asgi_application()
+# django_asgi_app = get_asgi_application()
 
-# application = ProtocolTypeRouter({
-#     "http": get_asgi_application(),
-#     "websocket": AuthMiddlewareStack(
-#         URLRouter(
-#             websocket_urlpatterns
-#         )
-#     )
-    
-# })
+application = ProtocolTypeRouter({
+    "http": get_asgi_application(),
+    "websocket": JWTForWebsocketMiddleware(AuthMiddlewareStack(
+        URLRouter(
+            websocket_urlpatterns
+        ))
+    )
+})
 
 # application = ProtocolTypeRouter({
 #     "http": django_asgi_app,
 #     'websocket': URLRouter(websocket_urlpatterns),
 # })
 
-application = ProtocolTypeRouter({
-    "http": django_asgi_app,
-    "websocket": AllowedHostsOriginValidator
-        # (
-        # AuthMiddlewareStack(
-        #     URLRouter(
-        #         websocket_urlpatterns
-        #     )
-        # )
-        # ),
-        (
-            URLRouter(
-                websocket_urlpatterns
-            )
-        )
-})
+# application = ProtocolTypeRouter({
+#     "http": django_asgi_app,
+#     "websocket": AllowedHostsOriginValidator
+#         # (
+#         # AuthMiddlewareStack(
+#         #     URLRouter(
+#         #         websocket_urlpatterns
+#         #     )
+#         # )
+#         # ),
+#         (
+#             URLRouter(
+#                 websocket_urlpatterns
+#             )
+#         )
+# })

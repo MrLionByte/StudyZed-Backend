@@ -4,7 +4,7 @@ from .models import Assessments, Session, Assessment_Questions, Answer_Options
 
 class AnswerOptionsSerializer(serializers.Serializer):
     option_no = serializers.IntegerField()
-    option = serializers.IntegerField()
+    option = serializers.CharField()
     is_correct = serializers.BooleanField()
     
     class Meta:
@@ -78,30 +78,29 @@ class AssessmentsSerializer(serializers.Serializer):
         
         for question_data in questions_data:
             options_data = question_data.pop('options', [])
-            
-            # Create question
+
             question = Assessment_Questions.objects.create(
                 assessment_key=assessment,
                 **question_data
             )
             
-            # Create options if question type is multiple choice
             if question.question_type == 'MLC':
-                # Validate at least one correct option
                 if not any(option['is_correct'] for option in options_data):
+                    print(question.question, "0000 ERR 1")
                     raise serializers.ValidationError(
                         f"Question '{question.question}' must have at least one correct option"
                     )
                 
-                # Validate option numbers are unique
                 option_numbers = [option['option_no'] for option in options_data]
+                print(option_numbers, "0000001")
                 if len(option_numbers) != len(set(option_numbers)):
+                    print(question.question, "000 ERR")
                     raise serializers.ValidationError(
                         f"Question '{question.question}' has duplicate option numbers"
                     )
                 
-                # Create options
                 for option_data in options_data:
+                    print(option_data, "0000002")
                     Answer_Options.objects.create(
                         questions_key=question,
                         **option_data
@@ -148,6 +147,7 @@ class AddQuestionsToAssessmentSerializers(serializers.ModelSerializer):
         assessment = validated_data.pop('assessment_key')
         validated_data['assessment_key'] = assessment
         return Assessment_Questions.objects.create(**validated_data)
+
 
 
 class GetAnswerOptionsSerializer(serializers.ModelSerializer):

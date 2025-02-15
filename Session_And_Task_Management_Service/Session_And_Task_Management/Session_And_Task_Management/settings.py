@@ -57,6 +57,8 @@ INSTALLED_APPS = [
     "cart",
     "students_in_session",
     "assessment_student_side",
+    "task_tutor_side",
+    "task_student_side",
     
     'cloudinary',
     'rest_framework',
@@ -156,3 +158,5 @@ STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY')
+
+

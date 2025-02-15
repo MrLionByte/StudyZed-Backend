@@ -4,17 +4,18 @@ from rest_framework_simplejwt import authentication
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from .models import Session
 from students_in_session.models import StudentsInSession
-from .serializers import CreateSessionSerializers, TutorSessionSerializer, AllSessionInSessions
+from .serializers import CreateSessionSerializers, TutorSessionSerializer, AllStudentInSessions, ApprovedStudentsInSessions
 from rest_framework.response import Response
 from rest_framework import status
 from .utils.responsses import api_response
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, PermissionDenied
 from django.db import DatabaseError
 from .producer import kafka_producer
 from .permissions import TutorAccessPermission
 from .utils.jwt_utils import decode_jwt_token
+from .custompagination import CursorPaginationWithOrdering
+from rest_framework.views import APIView
 
-# Create your views here.
 
 class CreateSessionView(generics.CreateAPIView):
     serializer_class = CreateSessionSerializers
@@ -26,7 +27,7 @@ class CreateSessionView(generics.CreateAPIView):
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             
-            instance = serializer.save() #To save data in db
+            instance = serializer.save() 
             
             response_data = serializer.data
             response_data["session_code"] = instance.session_code
@@ -72,11 +73,13 @@ class GetSessionView(generics.RetrieveAPIView):
     serializer_class = CreateSessionSerializers
     queryset = Session.objects.all()
     permission_classes = [TutorAccessPermission]
+    pagination_class = ""
 
 
 class TutorsSessionsView(generics.ListAPIView):
     serializer_class = TutorSessionSerializer
     permission_classes = [TutorAccessPermission]
+    pagination_class = CursorPaginationWithOrdering
     
     def get_queryset(self):
         print("111111")
@@ -89,7 +92,7 @@ class TutorsSessionsView(generics.ListAPIView):
 
 
 class StudentsInSessionView(generics.ListAPIView):
-    serializer_class = AllSessionInSessions
+    serializer_class = AllStudentInSessions
     permission_classes = [TutorAccessPermission]
     
     def get_queryset(self):
@@ -117,4 +120,45 @@ class ApproveStudentToSessionView(generics.UpdateAPIView):
         return Response({"message": f"Successfully approved session {student.student_code}",
                         'student_code': f'{student.student_code}' },
                         status=status.HTTP_202_ACCEPTED)
+
+class StudentsDataInSessionView(APIView):
+    permission_classes = [AllowAny]
     
+    def get(self, request, *args, **kwargs):
+        try:
+            session_code = request.query_params.get('session_code')
+            user_data = decode_jwt_token(request)
+            tutor_code = user_data.get("user_code")
+            
+            if not session_code:
+                raise ValidationError("query need session_code")
+            
+            session = Session.objects.get(session_code=session_code)
+            if session.tutor_code != tutor_code:
+                raise PermissionDenied("Session does not belong to this tutor.")
+            
+            student_codes = list(
+                StudentsInSession.objects.filter(session=session, is_allowded=True)
+                .values_list("student_code", flat=True)
+            )
+            
+            return Response(student_codes, status=status.HTTP_200_OK)
+
+        except Session.DoesNotExist:
+            return Response(
+                {"error": "Session with the given session_code does not exist."}, 
+                status=status.HTTP_404_NOT_FOUND)
+        
+        except ValidationError as e:
+            return Response(
+                {"error": str(e)}, 
+                status=status.HTTP_400_BAD_REQUEST)
+        
+        except PermissionDenied as e:
+            return Response({"error": str(e)}, 
+                            status=status.HTTP_403_FORBIDDEN)
+        
+        except Exception as e:
+            return Response({"error": str(e)}, 
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+

@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "session_buy",
     "wallet",
     "admin_app",
+    "price_setter",
     
     "corsheaders",
     

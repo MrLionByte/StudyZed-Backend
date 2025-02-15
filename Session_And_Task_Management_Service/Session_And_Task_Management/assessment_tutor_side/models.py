@@ -28,10 +28,16 @@ class Assessment_Questions(models.Model):
         default="OPEN",
     )
     
+    def __str__(self):
+        return f"{self.assessment_key} => {self.question_type}"
+    
     
 class Answer_Options(models.Model):
     questions_key = models.ForeignKey(Assessment_Questions,  on_delete=models.CASCADE, related_name="options")
     option_no = models.PositiveIntegerField()
     option = models.TextField(max_length=1250)
     is_correct = models.BooleanField(default=False)
+    
+    def __str__(self):
+        return f"{self.questions_key} => {self.option}"
     

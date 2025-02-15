@@ -39,7 +39,12 @@ class TutorSessionSerializer(serializers.ModelSerializer):
         model = Session
         fields = "__all__"
 
-class AllSessionInSessions(serializers.ModelSerializer):
+class AllStudentInSessions(serializers.ModelSerializer):
     class Meta:
         model = StudentsInSession
         fields = "__all__"
+
+class ApprovedStudentsInSessions(serializers.ModelSerializer):
+    class Meta:
+        model = StudentsInSession
+        fields = ["student_code"]

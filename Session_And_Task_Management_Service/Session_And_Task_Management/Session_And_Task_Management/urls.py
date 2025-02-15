@@ -24,9 +24,11 @@ urlpatterns = [
     
     path('session-tutor/', include('session_tutor.urls')),
     path('assessment-tutor/', include('assessment_tutor_side.urls')),
+    path('task-tutor/', include('task_tutor_side.urls')),
     
     path('session-student/', include('students_in_session.urls')),
     path('assessment-student/', include('assessment_student_side.urls')),
+    path('task-student/', include('task_student_side.urls')),
     
     path('session-admin/', include('admin_app.urls')),
     

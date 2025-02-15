@@ -11,4 +11,6 @@ urlpatterns = [
     path('all-session-students/', StudentsInSessionView.as_view()),
     path('approve-student-to-session/<int:pk>/', ApproveStudentToSessionView.as_view()),
     
+    path('students-in-session/', StudentsDataInSessionView.as_view()),
+    
 ]

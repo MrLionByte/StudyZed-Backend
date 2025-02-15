@@ -1,9 +1,14 @@
 from django.db import models
+from django.core.validators import MinValueValidator, MaxValueValidator
+from decimal import Decimal
 
 # Create your models here.
 
 class PriceOfSession(models.Model):
     amount = models.DecimalField(max_digits=10, decimal_places=2, help_text="Price of the session")
+    duration = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(12)], default=1
+    )
     offer = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -12,7 +17,7 @@ class PriceOfSession(models.Model):
         """
         Calculate the final price after applying the offer percentage.
         """
-        return self.amount * (1 - self.offer / 100)
+        return self.amount * (Decimal(1) - Decimal(self.offer) / Decimal(100))
 
     def __str__(self):
         return f"X - {self.amount} => ${self.final_price():.2f}"

@@ -266,6 +266,7 @@ class SignupWithGoogleAccountView(generics.CreateAPIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
+        print("SIGN OUT :", request.data)
         temp_googleId = request.data["google_id"]
         try:
             if UserAddon.objects.filter(google_id=temp_googleId).exists():
@@ -274,7 +275,7 @@ class SignupWithGoogleAccountView(generics.CreateAPIView):
                     return Response(
                         {
                             "message": "Google account is already linked to an blocked account.",
-                            "auth-status": "failure",
+                            "auth-status": "blocked",
                         },
                         status=status.HTTP_400_BAD_REQUEST,
                     )
@@ -284,14 +285,18 @@ class SignupWithGoogleAccountView(generics.CreateAPIView):
                 serializer = UserSerializer(user)
                 return Response(
                     {
-                        "message": "Welcome to studyzed",
+                        "message": "Logged in successfully",
                         "auth-status": "success",
                         "access_token": access_token,
                         "refresh_token": refresh_token,
                         "user": serializer.data,
+                        "role": user.role,
+                        "user_code": user.user_code,
+                        "auth-status": "success",
                     },
                     status=status.HTTP_200_OK,
                 )
+                     
 
             dummy_password = "".join(
                 random.choices(string.ascii_letters + string.digits, k=12)
@@ -313,10 +318,12 @@ class SignupWithGoogleAccountView(generics.CreateAPIView):
             return Response(
                 {
                     "message": "Account created successfully",
-                    "auth-status": "success",
+                    "auth-status": "created",
                     "refresh_token": refresh_token,
                     "access_token": access_token,
                     "user": serializer.data,
+                    "role": created.role,
+                    "user_code": created.user_code,
                 },
                 status=status.HTTP_200_OK,
             )
@@ -390,7 +397,14 @@ class LoginView(APIView):
     #         )
     
     def post(self, request, *args, **kwargs):
-        serializer = LoginSerilizer(data = request.data)
+        print(request.data)
+        user_email = None
+        if UserAddon.objects.filter(username=request.data.get('email')).exists():
+            user_email = UserAddon.objects.filter(username=request.data.get('email')).first()
+        if user_email:
+            request.data['email'] = user_email.email
+
+        serializer = LoginSerializer(data = request.data)
         
         if serializer.is_valid():
             
@@ -432,6 +446,7 @@ class LoginView(APIView):
             error_response = {
                     "status": "error",
                     "message": "Validation failed",
+                    "auth-status": "user-notexsist",
                     "errors": errors,
             }
             return Response(error_response, status=status.HTTP_400_BAD_REQUEST)

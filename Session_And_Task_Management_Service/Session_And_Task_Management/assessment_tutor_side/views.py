@@ -22,7 +22,7 @@ class GetAssessmentView(generics.ListAPIView):
     serializer_class = GetAssessmentsSerializer
 
     def get_queryset(self):
-        session_code = self.request.GET.get('session_code', '')  # Extract from query params
+        session_code = self.request.GET.get('session_code', '')
         print("SESSION :: >> ", session_code)
         session_key = Session.objects.get(session_code=session_code)
         print("SESSIOn KEy :",session_key)

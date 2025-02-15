@@ -13,6 +13,7 @@ from django.views.decorators.http import require_POST
 from django.conf import settings
 from .permissions import TutorAccessPermission
 from wallet.models import WalletTransactions, Wallet
+from decimal import Decimal
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 # print jwt token
@@ -25,7 +26,7 @@ class StripeCheckoutView(APIView):
             session_name = request.data.get('session_name')
             tutor_code = request.data.get('tutor_code')
             session_code = request.data.get('session_code')
-            amount = int(request.data.get('amount'))*100  # Amount in cents (e.g., $10 = 1000)
+            amount = Decimal(request.data.get('amount'))*100  # Amount in cents (e.g., $10 = 1000)
 
             # session_key = Subscription.objects.get(session_code=session_code, tutor_code=tutor_code)
             # print("SESSIOn KEY :",session_key)

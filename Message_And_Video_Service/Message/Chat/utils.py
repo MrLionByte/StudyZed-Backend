@@ -5,7 +5,7 @@ import requests
 from rest_framework.exceptions import PermissionDenied
 from .custom_user import CustomUser
 
-USER_SERVICE_URL = ""
+USER_SERVICE_URL = "http://127.0.0.1:8005/class-app/tutor-session-details/"
 
 
 def decode_jwt(token):
@@ -26,13 +26,11 @@ def decode_jwt(token):
 
 def get_user_by_id(user_id):
     try:
-        # Construct the URL to get the user by ID
-        url = f"{USER_SERVICE_URL}/users/{user_id}/"
+        url = f"{USER_SERVICE_URL}/?{tutor_code}/"
         response = requests.get(url)
         
-        # Check if the request was successful
         if response.status_code == 200:
-            user_data = response.json()  # Return the user data as a dictionary
+            user_data = response.json()
             return CustomUser(user_data)
         else:
             raise PermissionDenied("User not found in user service or invalid ID")

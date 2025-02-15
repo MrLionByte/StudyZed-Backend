@@ -5,7 +5,7 @@ from rest_framework.decorators import api_view, permission_classes
 from .models import (User ,OneToOneMessage, 
                      OpenChatRoom, OpenChatMessage)
 from mongoengine.queryset.visitor import Q
-from .serilizer import OneToOneMessageSerializer
+from .serializer import OneToOneMessageSerializer
 from .jwt_decode import decode_jwt_token
 from datetime import datetime
 
@@ -98,7 +98,6 @@ def get_chat_history(request, user_code, selected_user_code):
     Get chat history between two users
     """
     try:
-        # Fetch the current user and selected user
         current_user = User.objects.get(user_code=user_code)
         selected_user = User.objects.get(user_code=selected_user_code)
         
@@ -107,7 +106,6 @@ def get_chat_history(request, user_code, selected_user_code):
             (Q(sender=selected_user) & Q(recipient=current_user))
         ).order_by('timestamp')
 
-        # Serialize the messages
         serializer = OneToOneMessageSerializer(messages, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)

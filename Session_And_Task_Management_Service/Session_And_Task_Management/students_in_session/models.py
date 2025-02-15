@@ -13,5 +13,5 @@ class StudentsInSession(models.Model):
     updated_on = models.DateField(auto_now=True)
     
     def __str__(self):
-        return f"{self.session.session_name} by {self.session.tutor_code}"
+        return f"{self.student_code} by {self.name_per_session}"
     
