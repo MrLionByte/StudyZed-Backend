@@ -7,7 +7,7 @@ from students_in_session.models import StudentsInSession
 from .serializers import CreateSessionSerializers, TutorSessionSerializer, AllStudentInSessions, ApprovedStudentsInSessions
 from rest_framework.response import Response
 from rest_framework import status
-from .utils.responsses import api_response
+from .utils.responses import api_response
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from django.db import DatabaseError
 from .producer import kafka_producer
@@ -82,14 +82,15 @@ class TutorsSessionsView(generics.ListAPIView):
     pagination_class = CursorPaginationWithOrdering
     
     def get_queryset(self):
-        print("111111")
         tutor_code = self.request.query_params.get('tutor_code')
-        print("SESSIOn CODE :",tutor_code)
         if not tutor_code:
             raise ValidationError("tutor_code query parameter is required.")
-        
-        return Session.objects.filter(tutor_code=tutor_code)
 
+        try:
+            return Session.objects.filter(tutor_code=tutor_code)
+        except Exception as e:
+            print("VIEW ERROR:", e)
+            raise ValidationError("An error occurred while fetching sessions.")
 
 class StudentsInSessionView(generics.ListAPIView):
     serializer_class = AllStudentInSessions

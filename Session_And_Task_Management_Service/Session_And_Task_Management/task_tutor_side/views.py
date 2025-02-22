@@ -4,11 +4,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
 from .models import Tasks
 from task_student_side.models import AssignedTask
-from .serializers import TasksSerializer, AssignedTaskScoreSerializer
+from .serializers import TasksSerializer, AssignedTaskScoreSerializer, TaskEditSerializer
 from session_tutor.models import Session
 from datetime import datetime
+from django.utils import timezone
 # Create your views here.
 
 class CreateNewTaskView(generics.CreateAPIView):
@@ -55,7 +57,25 @@ class GetAllTasksView(APIView):
         serializer = TasksSerializer(tasks, many=True)
         return Response(serializer.data)
 
-            
+class EditTaskView(generics.UpdateAPIView):
+    permission_classes = [AllowAny]
+    serializer_class = TaskEditSerializer
+    queryset = Tasks.objects.filter(due_date__gte=timezone.now())
+    lookup_field = 'id'
+    lookup_url_kwarg = 'task_id'
+    
+    def update(self, request, *args, **kwargs):
+        partial_update = kwargs.pop('partial', False)
+        task_instance = self.get_object()
+        
+        serializer = self.get_serializer(
+            task_instance, data=request.data, partial=partial_update)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        
+        return Response( serializer.data, 
+                status=status.HTTP_202_ACCEPTED)
+       
 class GiveMarkForDailyTaskView(generics.UpdateAPIView):
     permission_classes = [AllowAny]
     queryset = AssignedTask.objects.all()

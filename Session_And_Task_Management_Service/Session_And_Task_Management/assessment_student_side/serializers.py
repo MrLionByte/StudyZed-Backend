@@ -5,7 +5,6 @@ from .models import StudentAssessment, StudentAssessmentResponse
 
 
 class AssessmentOptionSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Answer_Options
         fields = "__all__"
@@ -46,7 +45,10 @@ class GetAttendedAssessmentResponsesSerializers(serializers.ModelSerializer):
 
 class GetAttendedAssessmentsSerializers(serializers.ModelSerializer):
     responses = GetAttendedAssessmentResponsesSerializers(many=True)
+    assessment = serializers.IntegerField(source='assessment.id')
+
     class Meta:
         model = StudentAssessment
-        fields = "__all__"
-    
+        fields = ["student_session","assessment","score","started_on",
+                  "completed_on","is_completed","is_late_submission","responses"]
+        

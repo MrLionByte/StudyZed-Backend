@@ -36,3 +36,7 @@ class AssignedTaskScoreSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Score must be between 1 and 10.")
         return value
 
+class TaskEditSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tasks
+        fields = '__all__' 

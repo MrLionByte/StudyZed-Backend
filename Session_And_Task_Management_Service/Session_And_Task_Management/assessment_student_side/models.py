@@ -17,10 +17,8 @@ class StudentAssessment(models.Model):
     is_completed = models.BooleanField(default=False)
     is_late_submission = models.BooleanField(default=False)
     
-    
     def __str__(self):
         return f"{self.student_session} => {self.assessment}"
-    
     
     def save(self, *args, **kwargs):
         if not is_aware(self.completed_on):
@@ -46,7 +44,8 @@ class StudentAssessmentResponse(models.Model):
         null=True,
         blank=True,
         related_name="responses"
-    ) 
+    )
+    mark = models.PositiveIntegerField(blank=True, null=True)
     open_response = models.TextField(null=True, blank=True)
     is_correct = models.BooleanField(null=True) 
 
@@ -55,12 +54,15 @@ class StudentAssessmentResponse(models.Model):
     
     def save(self, *args, **kwargs):
         if self.selected_option:
-            self.is_correct = self.selected_option.is_correct
-            if self.is_correct:
-                self.student_assessment.score = (
-                    self.student_assessment.score or 0
-                ) + self.question.max_score
-                self.student_assessment.save()
+            if not self.is_correct:
+                self.is_correct = self.selected_option.is_correct
+                if self.is_correct:
+                    self.mark = self.question.max_score or 0
+                    
+                    self.student_assessment.score = (
+                        self.student_assessment.score or 0
+                    ) + self.question.max_score
+                    self.student_assessment.save()
         
         super().save(*args, **kwargs)
                 

@@ -31,7 +31,7 @@ urlpatterns = [
     ),
     path(
         "login/forgot-password/change-password/",
-        ForgottenPasswordNewPasswordiew.as_view(),
+        ForgottenPasswordNewPassword.as_view(),
         name="forgot_password_new_password",
     ),
     

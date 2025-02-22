@@ -8,4 +8,9 @@ urlpatterns = [
     path('add-question/', AddQuestionsToAssessmentView.as_view()),
     
     path('get-assessments/', GetAssessmentView.as_view()),
+    path('attended-students/',AttendedStudentsAndMark.as_view()),
+    path('attended-students/assessment/',AttendedAssessment.as_view()),
+    
+    path('attended-students/assessment/update-mark/'
+         ,UpdateMarkForAssessmentView.as_view())
 ]

@@ -124,3 +124,5 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+MONGO_URI = "mongodb+srv://fanunaf25:80dbT2D5ClGpNZKl@studyzedmessages.xfxnr.mongodb.net/?retryWrites=true&w=majority&appName=StudyZedMessages"

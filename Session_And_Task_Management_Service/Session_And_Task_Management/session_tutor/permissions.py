@@ -1,13 +1,9 @@
 from rest_framework import permissions, validators, status
 import jwt
 from jwt import exceptions
-from rest_framework.exceptions import AuthenticationFailed
-
-import jwt
+from rest_framework.exceptions import AuthenticationFailed,PermissionDenied, NotFound
 from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
-from rest_framework import permissions
 from rest_framework.response import Response
-from rest_framework.exceptions import AuthenticationFailed
 from django.conf import settings
 
 class TutorAccessPermission(permissions.BasePermission):
@@ -15,7 +11,6 @@ class TutorAccessPermission(permissions.BasePermission):
     
     def has_permission(self, request, view):
         token = request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]
-        print("TOKEN IN permission TUT:",token)
         secret_key = settings.JWT_SECRET_KEY
         
         try:
@@ -26,11 +21,18 @@ class TutorAccessPermission(permissions.BasePermission):
             else:
                 print("NOT TUTOR")
                 raise AuthenticationFailed("Permission denied, not a tutor.")
-        except ExpiredSignatureError:
-            print("Expired")
-            self.message = "Token has expired."
-            raise AuthenticationFailed(detail="Token has expired.", code=401)
-        except InvalidTokenError:
-            print("Signature Error")
-            self.message = "Invalid token."
-            raise AuthenticationFailed(detail="Invalid token.", code=401)
+        
+        except jwt.ExpiredSignatureError:
+            # Expired token case
+            print("Error XZ: Signature has expired")
+            raise AuthenticationFailed("Token has expired.")
+        
+        except jwt.InvalidTokenError:
+            # Generic invalid token case
+            print("Error XX: Invalid token")
+            raise AuthenticationFailed("Invalid token.")
+        
+        except Exception as e:
+            # Other exceptions
+            print("Error XY:", e)
+            raise AuthenticationFailed("Authentication failed.")

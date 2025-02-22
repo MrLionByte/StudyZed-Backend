@@ -36,6 +36,14 @@ class OneToOneMessage(Document):
         'ordering': ['timestamp']
     }
 
+    @property
+    def date(self):
+        return self.timestamp.date()
+    
+    @property
+    def time(self):
+        return self.timestamp.time()
+    
     def __str__(self):
         return f"{self.sender.email} ==>> {self.recipient.email}"
 

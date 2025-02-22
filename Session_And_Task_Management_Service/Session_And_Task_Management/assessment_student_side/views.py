@@ -5,9 +5,11 @@ from .models import (Session, StudentsInSession, StudentAssessmentResponse,
                      Answer_Options)
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
+from rest_framework.exceptions import NotFound, AuthenticationFailed, ParseError
 from datetime import datetime
 from .jwt_utils import decode_jwt_token
 import jwt
+from django.shortcuts import get_object_or_404
 from .serializers import *
 # Create your views here.
 
@@ -85,14 +87,16 @@ class GetAttendedAssessmentsView(generics.ListAPIView):
     def get_queryset(self):
         try:
             user_data = decode_jwt_token(self.request)
-        except jwt.ExpiredSignatureError:
-            return Response({"error": "Token has expired"}, status=status.HTTP_401_UNAUTHORIZED)
-        
-        try:
-            user = StudentsInSession.objects.get(student_code = user_data['user_code'])
-        
+            user = StudentsInSession.objects.get(
+                student_code = user_data['user_code'])
             return StudentAssessment.objects.filter(student_session=user)
+
+        except jwt.ExpiredSignatureError:
+            raise AuthenticationFailed("Token has expired")
         
+        except StudentsInSession.DoesNotExist:
+            raise NotFound("User not found")
         
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST) 
+            print("Error :",e)
+            raise ParseError(str(e))

@@ -349,7 +349,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 print("Failed to save message")
                 return
                 
-            # Broadcast message to room group            
+            # Broadcast message to room group
+            iso_timestamp = datetime.now(timezone.utc).isoformat()
             await self.channel_layer.group_send(
                 self.room_group_name,
                 {
@@ -357,7 +358,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     'message': message,
                     'sender': sender,
                     'chat_id': recipient,
-                    'timestamp': datetime.now(timezone.utc).isoformat(),
+                    'date': iso_timestamp.split("T")[0],
+                    'time': iso_timestamp.split("T")[1].split("Z")[0],
                 }
             )
         except Exception as e:
@@ -413,11 +415,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     (Q(sender=user) & Q(recipient=recipient)) |
                     (Q(sender=recipient) & Q(recipient=user))
                 ).order_by('timestamp')
-            print("GET CHAT HISTORY >>>", messages)
+
             return [{
                 'message': msg.content,
                 'sender': msg.sender.user_code,
-                'timestamp': msg.timestamp.isoformat()
+                'date': msg.date.isoformat(),
+                'time': msg.time.isoformat()[:5]
             } for msg in messages]
         except Exception as e:
             print("ERROR AT GET CHAt history", e)

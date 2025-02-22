@@ -24,6 +24,7 @@ from django.contrib.auth.hashers import make_password
 import random
 import string
 from google.oauth2 import id_token
+from rest_framework.exceptions import ValidationError
 
 
 # Create your views here.
@@ -279,10 +280,12 @@ class SignupWithGoogleAccountView(generics.CreateAPIView):
                         },
                         status=status.HTTP_400_BAD_REQUEST,
                     )
-                refresh = RefreshToken.for_user(user)
-                access_token = str(refresh.access_token)
-                refresh_token = str(refresh)
+                    
+                token_serializer = CustomTokenObtainPairSerializer.get_token(user)
+                access_token = str(token_serializer.access_token)
+                refresh_token = str(RefreshToken.for_user(user))
                 serializer = UserSerializer(user)
+                
                 return Response(
                     {
                         "message": "Logged in successfully",
@@ -305,14 +308,14 @@ class SignupWithGoogleAccountView(generics.CreateAPIView):
             created = UserAddon.objects.create(
                 email=request.data["email"],
                 google_id=temp_googleId,
-                role=request.data["role"],
+                role=(request.data["role"]).upper(),
                 first_name=request.data["first_name"],
                 username=request.data["username"],
                 password=password,
             )
-            refresh = RefreshToken.for_user(created)
-            access_token = str(refresh.access_token)
-            refresh_token = str(refresh)
+            token_serializer = CustomTokenObtainPairSerializer.get_token(user)
+            access_token = str(token_serializer.access_token)
+            refresh_token = str(RefreshToken.for_user(user))
             serializer = UserSerializer(created)
             print(access_token, refresh_token)
             return Response(
@@ -344,132 +347,79 @@ class SignupWithGoogleAccountView(generics.CreateAPIView):
 
 class LoginView(APIView):
     permission_classes = [AllowAny]
-
-    # def post(self, request, *args, **kwargs):
-    #     try:
-    #         user = self.UserAuthenticator(request.data)
-    #         serializer = UserSerializer(user)
-    #         print("USER :", user)
-    #         if user is not None and user.is_active:
-    #             refresh = RefreshToken.for_user(user)
-    #             access_token = str(refresh.access_token)
-    #             # access_token['extras'] = "adsadsdasdasdasdasdasdasdsd"
-    #             refresh_token = str(refresh)
-    #             print(access_token, refresh_token)
-
-    #             response = Response(
-    #                 {
-    #                     "access_token": access_token,
-    #                     "refresh_token": refresh_token,
-    #                     "user": serializer.data,
-    #                     "role": user.role,
-    #                     "user_code": user.user_code,
-    #                     "message": "Logged in successfully",
-    #                     "auth-status": "success",
-    #                 },
-    #                 status=status.HTTP_200_OK,
-    #             )
-    #             print("RESPONSE :", response)
-    #             response.set_cookie(
-    #                 key="access_token",
-    #                 value=access_token,
-    #                 httponly=True,
-    #                 secure=True,
-    #             )
-    #             response.set_cookie(
-    #                 key="refresh_token", value=refresh_token, httponly=True, secure=True
-    #             )
-    #             return response
-    #         elif user is not None and not user.is_active:
-    #             return Response(
-    #                 {"error": "User is blocked", "message": "Logged is blocked", "auth-status": "blocked"},
-    #                 status=status.HTTP_403_FORBIDDEN,
-    #             )
-    #         else:
-    #             return Response(
-    #                 {"error": "Invalid credentials"},
-    #                 status=status.HTTP_401_UNAUTHORIZED,
-    #             )
-    #     except Exception as e:
-    #         print("Error in login: ", str(e))
-    #         return Response(
-    #             {"error": "Invalid credentials", "message": str(e)}, status=status.HTTP_401_UNAUTHORIZED
-    #         )
     
     def post(self, request, *args, **kwargs):
-        print(request.data)
-        user_email = None
-        if UserAddon.objects.filter(username=request.data.get('email')).exists():
-            user_email = UserAddon.objects.filter(username=request.data.get('email')).first()
-        if user_email:
-            request.data['email'] = user_email.email
+        try:
+            user_email = None
+            if UserAddon.objects.filter(username=request.data.get('email')).exists():
+                user_email = UserAddon.objects.filter(username=request.data.get('email')).first()
+            if user_email:
+                request.data['email'] = user_email.email
 
-        serializer = LoginSerializer(data = request.data)
+            serializer = LoginSerializer(data = request.data)
+            
+            if serializer.is_valid():
+                
+                user = serializer.validated_data["user"]
+                print("VIEw :",user)
+                token_serializer = CustomTokenObtainPairSerializer.get_token(user)
+                
+                access_token = str(token_serializer.access_token)
+                refresh_token = str(RefreshToken.for_user(user))
+                
+                response = Response(
+                        {
+                            "access_token": access_token,
+                            "refresh_token": refresh_token,
+                            "user": {
+                                    "id": user.id,
+                                    "email": user.email,
+                                    "first_name": user.first_name,
+                                    "last_name": user.last_name,
+                                    "username": user.username,
+                                    "role": user.role,
+                                },
+                            "role": user.role,
+                            "user_code": user.user_code,
+                            "message": "Logged in successfully",
+                            "auth-status": "success",
+                        },
+                        status=status.HTTP_200_OK,
+                    )
+                response.set_cookie(
+                        key="access_token", value=access_token, httponly=True, secure=True
+                    )
+                response.set_cookie(
+                        key="refresh_token", value=refresh_token, httponly=True, secure=True
+                    )
+                return response
+            else:
+                print(serializer. errors)
+                errors = serializer.errors
+                print(errors)
+                error_response = {
+                        "status": "error",
+                        "message": "Validation failed",
+                        "auth-status": errors.get("auth-status", "validation failed"),
+                        "errors": errors,
+                }
+                return Response(error_response, status=status.HTTP_400_BAD_REQUEST)
         
-        if serializer.is_valid():
-            
-            user = serializer.validated_data["user"]
-            print("VIEw :",user)
-            token_serializer = CustomTokenObtainPairSerializer.get_token(user)
-            
-            access_token = str(token_serializer.access_token)
-            refresh_token = str(RefreshToken.for_user(user))
-            
-            response = Response(
-                    {
-                        "access_token": access_token,
-                        "refresh_token": refresh_token,
-                        "user": {
-                                "id": user.id,
-                                "email": user.email,
-                                "first_name": user.first_name,
-                                "last_name": user.last_name,
-                                "username": user.username,
-                                "role": user.role,
-                            },
-                        "role": user.role,
-                        "user_code": user.user_code,
-                        "message": "Logged in successfully",
-                        "auth-status": "success",
-                    },
-                    status=status.HTTP_200_OK,
-                )
-            response.set_cookie(
-                    key="access_token", value=access_token, httponly=True, secure=True
-                )
-            response.set_cookie(
-                    key="refresh_token", value=refresh_token, httponly=True, secure=True
-                )
-            return response
-        else:
-            errors = serializer.errors
-            error_response = {
+        except Exception as e:
+            return Response(
+                {
                     "status": "error",
-                    "message": "Validation failed",
-                    "auth-status": "user-notexsist",
-                    "errors": errors,
-            }
-            return Response(error_response, status=status.HTTP_400_BAD_REQUEST)
-
-    # def UserAuthenticator(self, data):
-    #     email = data.get("email")
-    #     password = data.get("password")
-    #     try:
-    #         user = UserAddon.objects.get(email=email)
-    #         print(user, "GOTTTT")
-    #         if user.check_password(password) and user.is_active:
-    #             return user
-    #         elif not user.is_active:
-    #             print("User is Blocked")
-    #     except UserAddon.DoesNotExist:
-    #         print("333")
-    #         return None
+                    "message": str(e),
+                    "auth-status": "server-error"
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 ## USER LOGIN }
 
 
-## USER TOCKEN CREATER{
+## USER TOKEN CREATE{
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
@@ -477,11 +427,10 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 class CustomTokenRefreshView(TokenRefreshView):
     serializer_class = CustomTokenRefreshSerializer
 
-## USER TOCKEN CREATER }
+## USER TOKEN CREATE }
 
 
 ## USER FORGOTTEN PASSWORD {
-
 
 class ForgotPasswordEmailView(APIView):
     permission_classes = [AllowAny]
@@ -565,7 +514,7 @@ class ForgottenPasswordOTPView(APIView):
                 )
 
 
-class ForgottenPasswordNewPasswordiew(APIView):
+class ForgottenPasswordNewPassword(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -612,8 +561,8 @@ class LogoutView(APIView):
 
     def post(self, request):
         try:
-            referesh_token = request.data["refresh_token"] 
-            token = RefreshToken(referesh_token)
+            refresh_token = request.data["refresh_token"] 
+            token = RefreshToken(refresh_token)
             token.blacklist()
             return Response(status=status.HTTP_205_RESET_CONTENT)
         except Exception as e:

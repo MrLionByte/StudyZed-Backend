@@ -160,3 +160,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY')
 
 
+REST_FRAMEWORK = {
+    'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
+}

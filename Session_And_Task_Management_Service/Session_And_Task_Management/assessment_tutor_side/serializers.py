@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Assessments, Session, Assessment_Questions, Answer_Options
-
+from assessment_student_side.models import StudentAssessmentResponse, StudentAssessment
 
 class AnswerOptionsSerializer(serializers.Serializer):
     option_no = serializers.IntegerField()
@@ -151,7 +151,6 @@ class AddQuestionsToAssessmentSerializers(serializers.ModelSerializer):
 
 
 class GetAnswerOptionsSerializer(serializers.ModelSerializer):
-    
     class Meta:
         model = Answer_Options
         fields = "__all__"
@@ -169,3 +168,57 @@ class GetAssessmentsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Assessments
         fields = "__all__"
+       
+        
+class GetStudentSerializers(serializers.ModelSerializer):
+    student_code = serializers.CharField(source="student_session.student_code")
+
+    class Meta:
+        model = StudentAssessment
+        fields = ['id','is_late_submission','score','student_code']
+
+
+
+
+class AnswerOptionsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Answer_Options
+        fields = ['id', 'option_no', 'option', 'is_correct']
+
+class AssessmentQuestionsSerializer(serializers.ModelSerializer):
+    options = AnswerOptionsSerializer(many=True)
+
+    class Meta:
+        model = Assessment_Questions
+        fields = ['id', 'question', 'max_score', 'question_type', 'options']
+
+class StudentAssessmentResponseSerializer(serializers.ModelSerializer):
+    question = AssessmentQuestionsSerializer()
+    selected_option = AnswerOptionsSerializer()
+
+    class Meta:
+        model = StudentAssessmentResponse
+        fields = ['id','question', 'selected_option', 'open_response', 'is_correct', 'mark']
+
+class StudentAssessmentSerializer(serializers.ModelSerializer):
+    responses = StudentAssessmentResponseSerializer(many=True)
+    assessment_title = serializers.CharField(source='assessment.assessment_title')
+    score = serializers.DecimalField(max_digits=5, decimal_places=2)
+
+    class Meta:
+        model = StudentAssessment
+        fields = [
+            'id', 
+            'assessment_title',
+            'score', 
+            'is_completed', 
+            'is_late_submission',
+            'started_on',
+            'completed_on',
+            'responses'
+        ]
+
+class MarkUpdateSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    mark = serializers.IntegerField(min_value=0)
+    
