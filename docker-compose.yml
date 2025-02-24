@@ -83,6 +83,19 @@ services:
     volumes:
       - ./Message_And_Video_Service/Message:/app
 
+  notification_management:
+    container_name: notification_management
+    build: 
+      context: ./Notification_Service/Notification/
+      dockerfile: Dockerfile
+    command: python manage.py runserver 0.0.0.0:8000 
+    environment:
+      - DJANGO_SETTINGS_MODULE=Notification.settings
+    ports:
+      - "8007:8000"
+    volumes:
+      - ./Notification_Service/Notification:/app
+
   zookeeper:
     image: 'bitnami/zookeeper:latest'
     container_name: zookeeper

@@ -11,10 +11,12 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+load_dotenv()
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -25,7 +27,7 @@ SECRET_KEY = "django-insecure-u)ux-u+f*o6i*!@5ytm6d(hmfkp1xe1%thmc+9&2ny7vawj(o5
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
 
 
 # Application definition
@@ -38,10 +40,16 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     
+    "rest_framework",
+    "mongoengine",
+    "corsheaders",
+    
     "app",
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
+    
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -80,8 +88,8 @@ DATABASES = {
 }
 
 
-from mongoengine import connect
-connect('notification_db') 
+# from mongoengine import connect
+# connect('notification_db') 
 
 
 # Password validation
@@ -125,4 +133,29 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-MONGO_URI = "mongodb+srv://fanunaf25:80dbT2D5ClGpNZKl@studyzedmessages.xfxnr.mongodb.net/?retryWrites=true&w=majority&appName=StudyZedMessages"
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",  
+    "http://127.0.0.1:5173",  
+    "http://messages_management:8006",
+]
+
+
+CORS_ALLOW_METHODS = [
+    "GET",
+    "POST",
+    "PUT",
+    "PATCH",
+    "DELETE",
+    "OPTIONS",
+]
+
+CORS_ALLOW_HEADERS = [
+    "authorization",
+    "content-type",
+    "x-csrftoken",
+]
+
+JWT_SECRET_KEY = "django-insecure-3=e8t28jwtmlds(kq1qfu)8&1!2ysi7hm8l^(8&q@8&w2r0-b9"
+
+MONGO_URI = "mongodb+srv://fanunaf25:80dbT2D5ClGpNZKl@studyzedmessages.xfxnr.mongodb.net/Notification?retryWrites=true&w=majority&appName=StudyZedMessages"

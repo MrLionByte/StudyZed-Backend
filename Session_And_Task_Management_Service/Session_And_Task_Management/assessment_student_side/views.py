@@ -11,6 +11,7 @@ from .jwt_utils import decode_jwt_token
 import jwt
 from django.shortcuts import get_object_or_404
 from .serializers import *
+from session_tutor.producer import kafka_producer
 # Create your views here.
 
 class GetAssessmentsForStudentViews(views.APIView):
@@ -72,7 +73,13 @@ class AttendAssessmentViews(views.APIView):
                     print("0003",assessment_response)
                     assessment_response.save()
                     print(assessment_response)
-                    
+            data = {
+                    "message": f"assessment {student_assessment.assessment.assessment_title} submitted by :{student_code}",
+                    "title": student_assessment.assessment.assessment_title,
+                    "tutor_code": student_assessment.assessment.session_key.tutor_code,
+                    "type": "alert",
+            }
+            kafka_producer.producer_message('assessment_attend', student_code, data)
             return Response({'2122'},status=status.HTTP_202_ACCEPTED)
         
         except Exception as e:

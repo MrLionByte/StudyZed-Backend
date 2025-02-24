@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from .models import Assessments, Session, Assessment_Questions, Answer_Options
 from assessment_student_side.models import StudentAssessmentResponse, StudentAssessment
+from session_tutor.producer import kafka_producer
+from students_in_session.models import StudentsInSession
 
 class AnswerOptionsSerializer(serializers.Serializer):
     option_no = serializers.IntegerField()
@@ -106,6 +108,14 @@ class AssessmentsSerializer(serializers.Serializer):
                         **option_data
                     )
         
+        student_codes = list(StudentsInSession.objects.filter(session=session).values_list('student_code', flat=True))
+        data = {
+                "message": f"assessment :{assessment.assessment_title} is scheduled for tomorrow",
+                "title": assessment.assessment_title,
+                "student_codes": student_codes,
+                "type": "reminder",
+            }
+        kafka_producer.producer_message('assessment', student_codes, data)
         return assessment
     
             

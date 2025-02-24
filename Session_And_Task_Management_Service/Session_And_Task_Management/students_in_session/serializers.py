@@ -1,5 +1,6 @@
 from rest_framework import serializers, response, status
 from .models import StudentsInSession, Session
+from session_tutor.producer import kafka_producer
 
 
 class EnterSessionSerializer(serializers.Serializer):
@@ -31,9 +32,17 @@ class EnterSessionSerializer(serializers.Serializer):
             })
         elif not session.is_active:
             raise serializers.ValidationError({
-            "message": "This ession is yet to be approved",
+            "message": "This session is yet to be approved",
             "error": "not_approved"
             })
+        student_code = validated_data.get('student_code')
+        data = {
+                "message": f"student :{student_code} has joined this session",
+                "title": f"joined:{student_code}",
+                "user_code": session.tutor_code,
+                "type": "reminder",
+            }
+        kafka_producer.producer_message('student_joined', student_code, data)
         return StudentsInSession.objects.create(session=session, **validated_data)
         
 

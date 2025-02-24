@@ -11,6 +11,7 @@ from datetime import datetime
 from django.utils.timezone import now
 from .jwt_utils import decode_jwt_token
 from rest_framework.exceptions import ValidationError
+from session_tutor.producer import kafka_producer
 # Create your views here.
 
     
@@ -83,7 +84,16 @@ class AttendTasksView(APIView):
         assigned_task, created = AssignedTask.objects.get_or_create(student=student, task=task)
         assigned_task.answer = answer
         assigned_task.save()
-
+        
+        data = {
+            'title': assigned_task.task.title,
+            'tutor_code': assigned_task.task.session.tutor_code,
+            'message': f"task: {assigned_task.task.title} submitted by student {student_code}",
+            "type": "reminder" 
+        }
+        
+        kafka_producer.producer_message('attended_task', student_code, data)
+        
         return Response(
             {"message": "Task attended successfully.", "task_id": task_id, "answer": answer},
             status=status.HTTP_201_CREATED,

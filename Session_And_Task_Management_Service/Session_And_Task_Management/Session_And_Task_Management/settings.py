@@ -64,6 +64,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
+    # 'celery',
+    # 'django_celery_beat',
     
 ]
 

@@ -8,6 +8,7 @@ class Tasks(models.Model):
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     due_date = models.DateTimeField()
+    notified = models.BooleanField(default=False) 
     
     def __str__(self):
        return f"Task: {self.title} (Session: {self.session})"

@@ -11,6 +11,10 @@ from .serializers import TasksSerializer, AssignedTaskScoreSerializer, TaskEditS
 from session_tutor.models import Session
 from datetime import datetime
 from django.utils import timezone
+from session_tutor.producer import kafka_producer
+from students_in_session.models import StudentsInSession
+from django.core.serializers import serialize
+
 # Create your views here.
 
 class CreateNewTaskView(generics.CreateAPIView):
@@ -34,7 +38,21 @@ class CreateNewTaskView(generics.CreateAPIView):
                 description=description,
                 due_date=due_date_and_time,
                 )
+            
             serializer = self.get_serializer(task)
+            student_codes = list(StudentsInSession.objects.filter(session=session).values_list('student_code', flat=True))
+            
+            data = {
+                "message": f"you have daily task :{task.title} tomorrow",
+                "task": {
+                        "task": task.id,
+                        "title": task.title,
+                        "due_date": task.due_date,
+                },
+                "type": "reminder",
+                "student_codes":student_codes
+            }
+            kafka_producer.producer_message('daily_task', session_code, data)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         
         except Exception as e:
@@ -100,3 +118,4 @@ class GiveMarkForDailyTaskView(generics.UpdateAPIView):
             "id": task_data.id,
             "score": task_data.score,
         }, status=status.HTTP_202_ACCEPTED)
+
