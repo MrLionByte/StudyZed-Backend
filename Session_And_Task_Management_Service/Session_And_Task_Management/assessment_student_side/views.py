@@ -34,7 +34,6 @@ class AttendAssessmentViews(views.APIView):
     def post(self, request):
         data = request.data.get("data")
         assessment_id = request.data.get("assessment_id")
-        print(">>> !! <<<",data, assessment_id)
         
         try:
             student = decode_jwt_token(request)
@@ -54,25 +53,20 @@ class AttendAssessmentViews(views.APIView):
                 is_completed = True                
             )
             for question in data:
-                print("99999 :: >",question)
                 question_instance = Assessment_Questions.objects.get(id=question.get("questionId"))
                 assessment_response = StudentAssessmentResponse.objects.create(
                     student_assessment = student_assessment,
                     question = question_instance,
                 )
-                print("?????? ",assessment_response)
                 if question["questionType"] == "OPEN":
-                    print("000999000")
                     assessment_response.open_response = question["answer"]
-                    print("0003",assessment_response)
                     assessment_response.save()
-                    print(assessment_response)
+                    
                 else:
                     opted = Answer_Options.objects.get(id=question["answer"])
                     assessment_response.selected_option = opted
-                    print("0003",assessment_response)
                     assessment_response.save()
-                    print(assessment_response)
+                    
             data = {
                     "message": f"assessment {student_assessment.assessment.assessment_title} submitted by :{student_code}",
                     "title": student_assessment.assessment.assessment_title,

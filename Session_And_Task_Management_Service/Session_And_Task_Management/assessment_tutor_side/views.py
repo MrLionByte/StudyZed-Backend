@@ -17,7 +17,6 @@ class CreateAssessmentView(generics.CreateAPIView):
     serializer_class = AssessmentsSerializer
     
     def perform_create(self, serializer):
-        print("ASSESSMENT :", serializer)
         assessment = serializer.save()
         return assessment
 
@@ -28,9 +27,7 @@ class GetAssessmentView(generics.ListAPIView):
 
     def get_queryset(self):
         session_code = self.request.GET.get('session_code', '')
-        print("SESSION :: >> ", session_code)
         session_key = Session.objects.get(session_code=session_code)
-        print("SESSIOn KEy :",session_key)
         return Assessments.objects.filter(session_key=session_key)
     
 
@@ -49,7 +46,6 @@ class AttendedStudentsAndMark(generics.ListAPIView):
             return StudentAssessment.objects.none()
         try:
             assessment = Assessments.objects.get(id=assessment_id)
-            print("SESSIOn KEy :",assessment)
         except Assessments.DoesNotExist:
             return StudentAssessment.objects.none()
         

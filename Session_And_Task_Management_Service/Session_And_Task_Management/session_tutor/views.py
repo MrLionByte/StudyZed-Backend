@@ -73,7 +73,7 @@ class GetSessionView(generics.RetrieveAPIView):
     serializer_class = CreateSessionSerializers
     queryset = Session.objects.all()
     permission_classes = [TutorAccessPermission]
-    pagination_class = ""
+    # pagination_class = ""
 
 
 class TutorsSessionsView(generics.ListAPIView):
@@ -113,11 +113,8 @@ class ApproveStudentToSessionView(generics.UpdateAPIView):
     
     def update(self, request, *args, **kwargs):
         student = self.get_object()
-        print("GET OBJ :", student, student.is_allowded)
         student.is_allowded = True
-        print(student.is_allowded)
         student.save()
-        print(student.is_allowded)
         return Response({"message": f"Successfully approved session {student.student_code}",
                         'student_code': f'{student.student_code}' },
                         status=status.HTTP_202_ACCEPTED)

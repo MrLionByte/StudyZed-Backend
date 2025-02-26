@@ -22,7 +22,7 @@ class Command(BaseCommand):
         }
         consumer = Consumer(conf)
         
-        consumer.subscribe(['daily_task'])  # Subscribe to the Kafka topic
+        consumer.subscribe(['daily_task']) 
 
         try:
             while True:

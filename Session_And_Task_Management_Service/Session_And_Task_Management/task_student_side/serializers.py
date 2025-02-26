@@ -10,7 +10,8 @@ class TasksStudentAttendedSerializer(serializers.ModelSerializer):
         
 
 class TasksThisMonthSerializer(serializers.ModelSerializer):
-
+    attended = TasksStudentAttendedSerializer(many=True, read_only=True)
+    
     class Meta:
         model = Tasks
         fields = '__all__'

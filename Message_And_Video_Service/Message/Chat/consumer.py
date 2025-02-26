@@ -233,54 +233,39 @@ class ChatConsumer(AsyncWebsocketConsumer):
     
     async def connect(self):
         if hasattr(self, 'is_connected') and self.is_connected:
-            print("Connection attempt ignored as it's already connected")
             return
         self.is_connected = True
-        print("Attempting connection...")
-
         
         try:
             self.user = self.scope['user']
             if not self.user or not hasattr(self.user, 'user_code'):
-                print("Invalid user")
                 await self.close()
                 return
             recipient_user = self.scope['url_route']['kwargs']['user_code']
-            print("REQ Recipient",recipient_user)
-            print("REQ SCOPE ::",self.scope)
             
             if not User.objects(user_code=recipient_user).first():
-                print("USER is NEW ??")
                 recipient = User(user_code=recipient_user)
                 recipient.save()
-                print("NEW USER ::",recipient)
                 
-            print("TESt USER :", self.user, self.user.user_id)
             self.chat_id = recipient_user
             user_ids = sorted([self.user.user_code, recipient_user])
-            print("ID FOR GROUP NAME", user_ids)
             
             self.room_group_name = f"chat_{user_ids[0]}_{user_ids[1]}"
             self.room_group_name = self.room_group_name.replace("-", "_")
-            print("Connection accepted successfully", self.room_group_name)
             
             redis = await self.get_redis()
             channel_key = f"channel:{self.channel_name}"
             group_key = f"group:{self.room_group_name}"
-            print("REDIS %%%:", redis)
             
             is_member = await redis.sismember(group_key, self.channel_name)
             if not is_member:
-                print("+++++++++++++++++++++++++++++")
                 await redis.sadd(group_key, self.channel_name)
-                print("---------------------------------")
                 
                 await redis.hset(channel_key, mapping={
                     'user': self.user.user_code,
                     'group': self.room_group_name,
                     'connected_at': datetime.now(timezone.utc).isoformat()
                 })
-                print("*******************************")
                 
                 await redis.expire(channel_key, 86400)
 
@@ -304,8 +289,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             # await self.accept()
     
             history = await self.get_chat_history(self.user.user_code, recipient_user)
-            print("HISTORy OF CHAT ::>>", history)
-
+            
             if history:
                 await self.send(text_data=json.dumps({
                     'type': 'chat_history',
@@ -315,7 +299,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
             print(f"Connection error in connect : {str(e)}")
 
     async def disconnect(self, close_code):
-        print(f"Disconnecting channel: {self.channel_name}")
         redis = await self.get_redis()
         group_key = f"group:{self.room_group_name}"
         channel_key = f"channel:{self.channel_name}"
@@ -336,17 +319,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
             message = data.get("message")
             sender = data.get('sender')
             recipient = data.get('chat_id')
-            print("333333333")
-            print(f"Received message: {message} from {sender} in chat {self.user}")
             
             if not all([message, sender, recipient]):
-                print("Missing required message data")
                 return
             
             saved_message = await self.save_message(sender, recipient, message)
             
             if not saved_message:
-                print("Failed to save message")
                 return
                 
             # Broadcast message to room group
@@ -367,11 +346,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             
             
     async def chat_message(self, event):
-        print(f"Broadcasting message: {event['message']} to chat {event['chat_id']}", event)
-        
-        print(f"Handling chat_message event for: {event}")
         if hasattr(self, 'message_handled') and self.message_handled == event['timestamp']:
-            print(f"Skipping duplicate event: {event}")
             return
         
         self.message_handled = event['timestamp']
@@ -386,12 +361,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def save_message(self, sender_id, recipient_id, content):
-        print('4444444444444444')
         sender = User.objects(user_code=sender_id).first()
         recipient = User.objects(user_code=recipient_id).first()
             
         if not sender or not recipient:
-            print(f"User not found - sender: {sender}, recipient: {recipient}")
             return None
         
         message = OneToOneMessage(
@@ -427,20 +400,15 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 class PersonalChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        print("Attempting connection...")
         try:
             self.user = self.scope["user"]
-            print("REQ USER",self.user)
             if not self.user or not hasattr(self.user, 'user_id'):
-                print("Invalid user")
                 await self.close()
                 return
             recipient_user = self.scope['url_route']['kwargs']['id']
-            print("REQ Recipient",self.scope)
             
             user_ids = sorted([int(self.user.user_id), int(recipient_user)])
             self.room_group_name = f"chat_{user_ids[0]}_{user_ids[1]}"
-            print("Connection accepted successfully", self.room_group_name)
             await self.channel_layer.group_add(
                 self.room_group_name,
                 self.channel_name

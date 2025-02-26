@@ -208,8 +208,6 @@ REST_FRAMEWORK = {
     ),
 }
 
-print("ACCESS TIME",os.getenv('ACCESS_TOKEN_LIFETIME'))
-
 SIMPLE_JWT = {
     
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=int(os.getenv('ACCESS_TOKEN_LIFETIME',1))),

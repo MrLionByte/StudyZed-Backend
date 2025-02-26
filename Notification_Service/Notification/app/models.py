@@ -1,5 +1,14 @@
+from django.db import models
+from django.contrib.auth.models import User
 from mongoengine import Document, StringField, BooleanField, DateTimeField, ReferenceField
 from datetime import datetime, timezone
+
+class UserFCMToken(Document):
+    user_code = StringField(required=True, unique=True)
+    fcm_token = StringField(required=True)
+
+    meta = {"indexes": ["user_code"]}
+
 
 class Notification(Document):
     title = StringField(required=True, max_length=255)
@@ -16,15 +25,14 @@ class Notification(Document):
         "indexes": [
             "user_code",
             "is_read",
-            "created_at",
             "due_time",
-            {"fields": ["created_at"], "expireAfterSeconds": 604800}  # 7 days
+            {"fields": ["created_at"], "expireAfterSeconds": 604800} 
         ],
-        "ordering": ["-created_at"]
+        "ordering": ["-created_at"],
+        "index_background": True 
     }
 
     def mark_as_read(self):
-        """Marks the notification as read efficiently."""
         self.update(set__is_read=True)
 
     def __str__(self):

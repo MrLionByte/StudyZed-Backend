@@ -131,25 +131,40 @@ services:
     ports:
       - "6378:6379"
     volumes:
-      - redis_data:/data
+      - redis:/data
 
-  # nginx:
-  #   container_name: nginx
-  #   image: nginx:latest
-  #   ports:
-  #     - "80:80"
-  #   depends_on:
-  #     - session_and_task_management
-  #     - payment_management
-  #     # - another_service
+  celery_worker_2:
+    build: 
+      context: ./Notification_Service/Notification/
+      dockerfile: Dockerfile
+    container_name: celery_worker_2
+    command: celery -A Notification.celery worker --loglevel=info
+    volumes:
+      - ./Notification_Service/Notification:/app
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379
+      - CELERY_RESULT_BACKEND=redis://redis:6379
+    depends_on:
+      - redis
+
+  # celery_beat:
+  #   build: 
+  #     context: ./Notification_Service/Notification/
+  #     dockerfile: Dockerfile
+  #   container_name: celery_beat
+  #   command: celery -A Notification.celery beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
   #   volumes:
-  #     - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-  #   restart: always
-
+  #     - ./Notification_Service/Notification:/app
+  #   environment:
+  #     - CELERY_BROKER_URL=redis://redis:6379
+  #     - CELERY_RESULT_BACKEND=redis://redis:6379
+  #   depends_on:
+  #     - redis
+  #     - notification_management
 
 volumes:
   session_task_db:
   payment_db:
   kafka_data:
   zookeeper_data:
-  redis_data:
+  redis:

@@ -25,12 +25,12 @@ class CreateNewTaskView(generics.CreateAPIView):
     def create(self, request, *args, **kwargs):
     
         try:
-            print(request.data)
+           
             title = request.data.get('title')
             description = request.data.get('description')
             session_code = request.data.get('session')
             due_date_and_time = request.data.get('date_and_time')
-            print(session_code, due_date_and_time, description, title)
+           
             session = Session.objects.get(session_code=session_code['session_code'])
             task = Tasks.objects.create(
                 session=session,
@@ -71,7 +71,10 @@ class CreateNewTaskView(generics.CreateAPIView):
 
 class GetAllTasksView(APIView):
     def get(self, request):
-        tasks = Tasks.objects.prefetch_related("attended__student").all()  
+        session_code = self.request.query_params.get('session_code')
+        tasks = Tasks.objects.filter(
+            session__session_code=session_code).prefetch_related(
+                "attended__student").all()  
         serializer = TasksSerializer(tasks, many=True)
         return Response(serializer.data)
 
@@ -88,6 +91,13 @@ class EditTaskView(generics.UpdateAPIView):
         
         serializer = self.get_serializer(
             task_instance, data=request.data, partial=partial_update)
+        task_id = request.data.get('id')
+        date = request.data.get('date')
+        task = Tasks.objects.get(id=task_id)
+        if task.due_date != date:
+            task.due_date=date
+            task.save()
+            
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         

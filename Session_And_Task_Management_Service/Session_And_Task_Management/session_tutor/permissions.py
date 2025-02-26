@@ -23,16 +23,16 @@ class TutorAccessPermission(permissions.BasePermission):
                 raise AuthenticationFailed("Permission denied, not a tutor.")
         
         except jwt.ExpiredSignatureError:
-            # Expired token case
+           
             print("Error XZ: Signature has expired")
             raise AuthenticationFailed("Token has expired.")
         
         except jwt.InvalidTokenError:
-            # Generic invalid token case
+            
             print("Error XX: Invalid token")
             raise AuthenticationFailed("Invalid token.")
         
         except Exception as e:
-            # Other exceptions
+            
             print("Error XY:", e)
             raise AuthenticationFailed("Authentication failed.")

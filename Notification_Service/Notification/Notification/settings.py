@@ -12,9 +12,10 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 from dotenv import load_dotenv
-
+from datetime import timedelta
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+from celery.schedules import crontab
 
 load_dotenv()
 
@@ -43,7 +44,8 @@ INSTALLED_APPS = [
     "rest_framework",
     "mongoengine",
     "corsheaders",
-    
+    'django_celery_beat',
+    'celery',
     "app",
 ]
 
@@ -84,7 +86,10 @@ WSGI_APPLICATION = "Notification.wsgi.application"
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
-     'default': {}
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
 }
 
 
@@ -159,3 +164,42 @@ CORS_ALLOW_HEADERS = [
 JWT_SECRET_KEY = "django-insecure-3=e8t28jwtmlds(kq1qfu)8&1!2ysi7hm8l^(8&q@8&w2r0-b9"
 
 MONGO_URI = "mongodb+srv://fanunaf25:80dbT2D5ClGpNZKl@studyzedmessages.xfxnr.mongodb.net/Notification?retryWrites=true&w=majority&appName=StudyZedMessages"
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': 'redis://redis_service_2:6379/2',
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
+    }
+}
+
+CELERY_BROKER_URL = 'redis://redis_service_2:6379/0' 
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+CELERY_RESULT_BACKEND = 'redis://redis_service_2:6379/0' 
+
+CELERY_RESULT_EXTENDED = True
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
+
+CELERY_BEAT_SCHEDULE = {
+    'check-tomorrow-reminders': {
+        'task': 'send_reminder_notification',
+        'schedule': crontab(hour=12, minute=0), 
+    },
+}
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [('redis_service_2', 6379)], 
+        },
+    }
+}
+
+REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': None,
+}

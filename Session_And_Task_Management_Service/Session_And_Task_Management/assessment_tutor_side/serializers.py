@@ -55,7 +55,6 @@ class AssessmentsSerializer(serializers.Serializer):
         ]
         
     def validate(self, data):
-        print("validate :: => ", data)
         if data['end_time'] <= data['start_time']:
             raise serializers.ValidationError(
                 'End time must be after start time'
@@ -88,21 +87,17 @@ class AssessmentsSerializer(serializers.Serializer):
             
             if question.question_type == 'MLC':
                 if not any(option['is_correct'] for option in options_data):
-                    print(question.question, "0000 ERR 1")
                     raise serializers.ValidationError(
                         f"Question '{question.question}' must have at least one correct option"
                     )
                 
                 option_numbers = [option['option_no'] for option in options_data]
-                print(option_numbers, "0000001")
                 if len(option_numbers) != len(set(option_numbers)):
-                    print(question.question, "000 ERR")
                     raise serializers.ValidationError(
                         f"Question '{question.question}' has duplicate option numbers"
                     )
                 
                 for option_data in options_data:
-                    print(option_data, "0000002")
                     Answer_Options.objects.create(
                         questions_key=question,
                         **option_data
@@ -153,7 +148,6 @@ class AddQuestionsToAssessmentSerializers(serializers.ModelSerializer):
                   'question_type']
     
     def create(self, validated_data):
-        print(validated_data)
         assessment = validated_data.pop('assessment_key')
         validated_data['assessment_key'] = assessment
         return Assessment_Questions.objects.create(**validated_data)

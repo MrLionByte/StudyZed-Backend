@@ -22,7 +22,6 @@ class GetAllTasksForStudentView(generics.ListAPIView):
     def get_queryset(self):
         today = now()
         session_code = self.request.query_params.get('session_code')
-        print(session_code)
         if not session_code:
             raise ValidationError("Session code is required.")
         return Tasks.objects.filter(
