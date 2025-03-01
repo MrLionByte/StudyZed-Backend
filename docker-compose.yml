@@ -73,15 +73,15 @@ services:
   messages_management:
     container_name: messages_management
     build: 
-      context: ./Message_And_Video_Service/Message
+      context: ./Message_And_Video_Service/Message_Video
       dockerfile: Dockerfile
-    command: daphne -b 0.0.0.0 -p 8000 Message.asgi:application
+    command: daphne -b 0.0.0.0 -p 8000 Message_Video.asgi:application
     environment:
-      - DJANGO_SETTINGS_MODULE=Message.settings
+      - DJANGO_SETTINGS_MODULE=Message_Video.settings
     ports:
       - "8006:8000"
     volumes:
-      - ./Message_And_Video_Service/Message:/app
+      - ./Message_And_Video_Service/Message_Video:/app
 
   notification_management:
     container_name: notification_management
