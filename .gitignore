@@ -1,1 +1,8 @@
 data/db/
+Usermanagement_Service/venv
+Session_And_Task_Management_Service/venv
+Payment_Service/venv
+Notification_Service/venv
+Message_And_Video_Service/venv
+APIGateway/venv
+Admin/venv

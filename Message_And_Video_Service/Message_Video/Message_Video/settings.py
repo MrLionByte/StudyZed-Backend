@@ -26,13 +26,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-3-ntsnt#u99z_6%s!tm4n7y4v*ccmi%5wl&b$6ay)4c0k809ud"
+SECRET_KEY = os.environ["SECRET_KEY"]
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["127.0.0.1", 
-                 "localhost", "messages_management"]
+ALLOWED_HOSTS = [os.environ["ALLOWED_HOSTS_1"], 
+                 os.environ["ALLOWED_HOSTS_2"], 
+                 os.environ["ALLOWED_HOSTS_3"]]
 
 
 # Application definition
@@ -51,6 +52,7 @@ INSTALLED_APPS = [
     "corsheaders",
     
     "Chat",
+    "Video",
 ]
 
 MIDDLEWARE = [
@@ -67,9 +69,9 @@ MIDDLEWARE = [
 
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",  
-    "http://127.0.0.1:5173",  
-    "http://messages_management:8006",
+    os.environ['CORS_ALLOWED_ORIGINS_1'],  
+    os.environ['CORS_ALLOWED_ORIGINS_2'],  
+    os.environ['CORS_ALLOWED_ORIGINS_3'],
 ]
 
 
@@ -171,7 +173,8 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "UTC"
+# TIME_ZONE = "UTC"
+TIME_ZONE = 'Asia/Kolkata'
 
 USE_I18N = True
 
@@ -188,9 +191,20 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-JWT_SECRET_KEY = "django-insecure-3=e8t28jwtmlds(kq1qfu)8&1!2ysi7hm8l^(8&q@8&w2r0-b9"
+JWT_SECRET_KEY = os.environ['JWT_SECRET_KEY']
 
+MONGO_URI =  os.environ['MONGO_URI']
 
-MONGO_URI = "mongodb+srv://fanunaf25:80dbT2D5ClGpNZKl@studyzedmessages.xfxnr.mongodb.net/?retryWrites=true&w=majority&appName=StudyZedMessages"
+WEBRTC_ICE_SERVERS = [
+    {"urls": "stun:stun.l.google.com:19302"},
+    {"urls": "stun:stun1.l.google.com:19302"},
+    # For production, you should add TURN servers:
+    # {
+    #     "urls": "turn:your-turn-server.com:3478",
+    #     "username": "your-username",
+    #     "credential": "your-password"
+    # }
+]
 
 # To Run daphne -b 0.0.0.0 -p 8000 Message_Video.asgi:application
+

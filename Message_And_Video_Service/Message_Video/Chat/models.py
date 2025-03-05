@@ -1,12 +1,12 @@
 from django.db import models
-from pymongo import MongoClient
-from pymongo.server_api import ServerApi
 from django.conf import settings
 from datetime import datetime, timezone
-
 from mongoengine import (Document, StringField, IntField,
                          ReferenceField, DateTimeField, 
                          ListField, CASCADE, BooleanField)
+import pytz
+
+IST = pytz.timezone('Asia/Kolkata')
 
 class User(Document):
     user_id = IntField(unique=True)
@@ -30,20 +30,17 @@ class OneToOneMessage(Document):
     sender = ReferenceField(User, reverse_delete_rule=2)  
     recipient = ReferenceField(User, reverse_delete_rule=2) 
     content = StringField(required=True) 
-    timestamp = DateTimeField(default=datetime.now(timezone.utc))  
-
+    timestamp = DateTimeField(default=lambda: datetime.now(timezone.utc))
+    created_on = StringField(required=True)
+    
     meta = {
         'ordering': ['timestamp']
     }
+    
+    @property
+    def local_timestamp(self):
+        return self.timestamp.astimezone(IST)
 
-    @property
-    def date(self):
-        return self.timestamp.date()
-    
-    @property
-    def time(self):
-        return self.timestamp.time()
-    
     def __str__(self):
         return f"{self.sender.email} ==>> {self.recipient.email}"
 
@@ -59,7 +56,7 @@ class OpenChatRoom(Document):
 class OpenChatMessage(Document):
     sender = ReferenceField(User, required=True)  
     recipient = ReferenceField(User, required=True)  
-    community = ReferenceField(OpenChatRoom, required=True)
+    session = ReferenceField(OpenChatRoom, required=True)
     content = StringField(required=True) 
     timestamp = DateTimeField(default=datetime.now(timezone.utc))  
     is_deleted = BooleanField(default=False)  

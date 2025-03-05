@@ -12,16 +12,16 @@ async def get_or_create_user(user_data):
     email = user_data.get("user_email", "")
     role = user_data.get("user_role", "")
     user_code = user_data.get("user_code", "")
-
     try:
         user = User.objects(user_code=user_code).first()
         if user:
-            if user.user_id or user.email:
-                User.objects(Q(user_id=user.user_id) | Q(email=user.email)).update(
-                    set__email=email,
-                    set__user_role=role,
-                    set__user_id=user_id
-                )
+            if user.user_id or user.user_role:
+                if not user.user_role or not user.user_id or not user.email:
+                    User.objects(Q(user_id=user.user_id) | Q(email=user.email)).update(
+                        set__email=email,
+                        set__user_role=role,
+                        set__user_id=user_id,
+                    )
             return user
 
         user = User(

@@ -5,213 +5,11 @@ from .views import get_chatted_user
 from .serializer import OneToOneMessageSerializer
 from asgiref.sync import sync_to_async
 from datetime import datetime, timezone
+from django.utils.timezone import localtime
 from channels.db import database_sync_to_async
-
-# class ChatConsumer(AsyncWebsocketConsumer):
-#     async def connect(self):
-#         try:
-            
-#             query_string = self.scope['query_string'].decode()
-#             query_params = dict(q.split('=') for q in query_string.split('&') if q)
-#             user_id = query_params.get('user_id')
-            
-#             if not user_id:
-#                 print("No user_id provided")
-#                 await self.close()
-#                 return
-            
-#             chat_with_user = self.scope['url_route']['kwargs']['chat_id']
-#             user_ids = [str(user_id), str(chat_with_user)] 
-#             user_ids = sorted(user_ids)
-            
-            
-#             self.private_chat_room = f"chat_{user_ids[0]}--{user_ids[1]}"
-#             self.user_id = user_id 
-            
-#             # Notify both users about the new conversation
-#             await self.channel_layer.group_add(
-#                 self.private_chat_room,
-#                 self.channel_name
-#             )
-            
-#             #  Add user to personal notfy channel
-#             await self.channel_layer.group_add(
-#                 f"user_{user_id}",
-#                 self.channel_name
-#             )
-
-#             await self.channel_layer.group_add(
-#                 self.private_chat_room,
-#                 self.channel_name
-#             )
-
-#             await self.accept()
-
-#         except Exception as e:
-#             print(f"Connection failed: {str(e)}")
-#             await self.close()
-
-#     @sync_to_async
-#     def save_message(self, sender_id, recipient_id, content):
-#         print("SENDER ID TESTING", sender_id, recipient_id, content)
-#         try:
-#             sender = User.objects(user_id=sender_id).first()
-#             if not sender:
-#                 print(f"Sender with ID {sender_id} not found")
-#                 return None
-                
-#             # Get or create recipient
-#             recipient = User.objects(user_id=recipient_id).first()
-#             if not recipient:
-#                 print(f"Recipient with ID {recipient_id} not found")
-#                 return None
-            
-#             message = OneToOneMessage(
-#                 sender = sender,
-#                 recipient = recipient,
-#                 content = content
-#             )
-#             message.save()
-#             return message
-        
-#         except Exception as e:
-#             print(f"Error in receive: {str(e)}")
-#             return None
-
-
-#     async def receive(self, text_data=None, bytes_data=None):
-#         try:
-#             data = json.loads(text_data)
-#             message_content = data['message']
-#             recipient_id = self.scope['url_route']['kwargs']['chat_id']
-#             sender_id = self.user_id  # Use the stored user_id
-
-#             # Save the message to the database
-#             message = await self.save_message(sender_id, recipient_id, message_content)
-            
-#             if message:
-#                 # Send the message to the private chat
-#                 await self.channel_layer.group_send(
-#                     self.private_chat_room,
-#                     {
-#                         'type': 'chat_message',
-#                         'message': message_content,
-#                         'sender_id': sender_id,
-#                         'timestamp': message.timestamp.isoformat()
-#                     }
-#                 )
-#         except Exception as e:
-#             print(f"Error in receive: {str(e)}")
-
-#     async def disconnect(self, code):
-#         try:
-#             await self.channel_layer.group_discard(
-#                 self.private_chat_room,
-#                 self.channel_name
-#             )
-#             # Also remove from personal notification channel
-#             if hasattr(self, 'user_id'):
-#                 await self.channel_layer.group_discard(
-#                     f"user_{self.user_id}",
-#                     self.channel_name
-#                 )
-#         except Exception as e:
-#             print(f"Error in disconnect: {str(e)}")
-
-#     async def chat_message(self, event):
-#         try:
-#             await self.send(text_data=json.dumps({
-#                 'message': event['message'],
-#                 'sender_id': event['sender_id'],
-#                 'timestamp': event['timestamp']
-#             }))
-#         except Exception as e:
-#             print(f"Error in chat_message: {str(e)}")
-
-# class ChatConsumer(AsyncWebsocketConsumer):
-#     async def connect(self):
-#         self.userID = self.scope["url_route"]["kwargs"]["userID"]
-#         self.room_group_name = f"chat_{self.userID}"
-#         query_string = self.scope['query_string'].decode()
-#         query_params = dict(qc.split("=") for qc in query_string.split("&") if "=" in qc)
-#         self.tutor_code = query_params.get("user_id", None)
-                
-#         print(f"Connecting to room group: {self.room_group_name}")
-#         await self.channel_layer.group_add(
-#             self.room_group_name,
-#             self.channel_name
-#         )
-#         await self.accept()
-#         print(f'WebSocket connected : {self.channel_name}')
-    
-#     async def disconnect(self, close_code):
-#         print(f"WebSocket disconnecting : {self.channel_name}, close_code : {close_code}")
-        
-#         await self.channel_layer.group_discard(
-#             self.room_group_name,
-#             self.channel_name
-#         )        
-#         print(f"WebSocket disconnected : {self.channel_name}")
-        
-#     async def receive(self, text_data=None, bytes_data=None):
-#         print("Received Here ^-^")
-#         print(text_data)
-#         text_data_json = json.loads(text_data)
-#         message = text_data_json["message"]
-#         recipient_id = text_data_json['recipient_id']
-#         sender_id = text_data_json['sender_id']
-#         await self.save_message(sender_id, recipient_id, message)
-        
-#         # To senders feed or room
-#         await self.channel_layer.group_send(
-#             f"chat_{sender_id}",
-#             {
-#                 "type"      :   "chat_message",
-#                 "message"   :   message,
-#                 "sender_id" :   sender_id,
-#                 "recipient_id": recipient_id,
-#                 "timestamp": datetime.now(timezone.utc).isoformat()
-#             }
-#         )
-        
-#         # To recipient feed or room
-#         await self.channel_layer.group_send(
-#             f"chat_{recipient_id}",
-#             {
-#                 "type"      :   "chat_message",
-#                 "message"   :   message,
-#                 "sender_id" :   sender_id,
-#                 "recipient_id": recipient_id,
-#                 "timestamp": datetime.now(timezone.utc).isoformat()
-#             }
-#         )
-        
-#     async def chat_message(self, event):
-        
-#         await self.send(text_data=json.dumps(event))
-    
-#     @database_sync_to_async
-#     def save_message(self, sender_id, recipient_id, content):
-#         sender = User.objects(user_id=sender_id).first()
-#         recipient = User.objects(user_id=recipient_id).first()
-#         OneToOneMessage(
-#             sender = sender,
-#             recipient = recipient,
-#             content = content
-#         ).save()
-        
-
-# consumers.py
-import json
-import redis
 from redis.asyncio import Redis
-from channels.generic.websocket import AsyncWebsocketConsumer
-from channels.db import database_sync_to_async
-from datetime import datetime, timezone
-from .models import User, OneToOneMessage
 from .jwt_decode import decode_jwt_token_for_chat
 from mongoengine.queryset.visitor import Q 
-
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
@@ -264,7 +62,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 await redis.hset(channel_key, mapping={
                     'user': self.user.user_code,
                     'group': self.room_group_name,
-                    'connected_at': datetime.now(timezone.utc).isoformat()
+                    'connected_at': datetime.now().isoformat()
                 })
                 
                 await redis.expire(channel_key, 86400)
@@ -294,7 +92,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 await self.send(text_data=json.dumps({
                     'type': 'chat_history',
                     'messages': history
-                }))
+                }, default=str))
         except Exception as e:
             print(f"Connection error in connect : {str(e)}")
 
@@ -322,14 +120,15 @@ class ChatConsumer(AsyncWebsocketConsumer):
             
             if not all([message, sender, recipient]):
                 return
-            
-            saved_message = await self.save_message(sender, recipient, message)
+            iso_timestamp = datetime.now().isoformat()
+            saved_message = await self.save_message(
+                sender, recipient, message, iso_timestamp)
             
             if not saved_message:
                 return
                 
             # Broadcast message to room group
-            iso_timestamp = datetime.now(timezone.utc).isoformat()
+            
             await self.channel_layer.group_send(
                 self.room_group_name,
                 {
@@ -337,8 +136,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     'message': message,
                     'sender': sender,
                     'chat_id': recipient,
-                    'date': iso_timestamp.split("T")[0],
-                    'time': iso_timestamp.split("T")[1].split("Z")[0],
+                    'timestamp': iso_timestamp,
                 }
             )
         except Exception as e:
@@ -346,11 +144,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
             
             
     async def chat_message(self, event):
+        print("222")
         if hasattr(self, 'message_handled') and self.message_handled == event['timestamp']:
             return
-        
+        print("333")
         self.message_handled = event['timestamp']
-        
+        print("444", self.message_handled)
         await self.send(text_data=json.dumps({
                 'type': event['type'], 
                 'message': event['message'],
@@ -360,7 +159,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
             }))
 
     @database_sync_to_async
-    def save_message(self, sender_id, recipient_id, content):
+    def save_message(
+        self, sender_id, recipient_id, content, messaged_time
+                        ):
         sender = User.objects(user_code=sender_id).first()
         recipient = User.objects(user_code=recipient_id).first()
             
@@ -370,7 +171,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
         message = OneToOneMessage(
                 sender=sender,
                 recipient=recipient,
-                content=content
+                content=content,
+                created_on=messaged_time
             )
         message.save()
         return message
@@ -383,18 +185,18 @@ class ChatConsumer(AsyncWebsocketConsumer):
             
             if not user or not recipient:
                 return []
-        
+            print("1111")
             messages = OneToOneMessage.objects(
                     (Q(sender=user) & Q(recipient=recipient)) |
                     (Q(sender=recipient) & Q(recipient=user))
                 ).order_by('timestamp')
-
+            print("5555")
+            
             return [{
                 'message': msg.content,
                 'sender': msg.sender.user_code,
-                'date': msg.date.isoformat(),
-                'time': msg.time.isoformat()[:5]
-            } for msg in messages]
+                'timestamp': msg.created_on
+                } for msg in messages]
         except Exception as e:
             print("ERROR AT GET CHAt history", e)
 

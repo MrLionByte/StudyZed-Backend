@@ -5,11 +5,11 @@ sio = socketio.Server()
 
 @sio.event
 def connect (sid, environ):
-    print("Client connected", sid)
+    print("Client connected @Socket Server :", sid)
     
 @sio.event
 def disconnect(sid):
-    print('Client disconnected:', sid)
+    print('Client disconnected @Socket Server:', sid)
     
 
 if __name__ == '__main__':

@@ -28,17 +28,17 @@ load_dotenv(dotenv_path=env_path)
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-w$x(jei@9o5#jfo)%dy@+x&fc6mq)xv-kn25a=9chkn1h3tza@"
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = [os.getenv('ALLOWED_HOSTS')]
 
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:5173',
-    'http://127.0.0.1:5173',
+    os.getenv('CORS_ALLOWED_ORIGINS_1'),
+    os.getenv('CORS_ALLOWED_ORIGINS_2'),
 ]
 
 # Application definition
@@ -108,11 +108,9 @@ WSGI_APPLICATION = "Session_And_Task_Management.wsgi.application"
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        "NAME": 'session_task_management_studyzed',
+        "NAME": os.getenv('DB_NAME'),
         "USER":  os.getenv('DB_USER'),
         "PASSWORD":  os.getenv('DB_PASSWORD'),
-        # "HOST": 'localhost',
-        # "PORT": 5432,
         "HOST":  os.getenv('DB_HOST'),
         "PORT":  os.getenv('DB_PORT'),
     }

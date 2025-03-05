@@ -30,9 +30,10 @@ load_dotenv(dotenv_path=env_path)
 SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG')
-# print("LOCAL HOST :", os.getenv('ALLOWED_LOCAL_HOSTS'))
-ALLOWED_HOSTS = ["localhost","127.0.0.1"]
+DEBUG = True
+
+ALLOWED_HOSTS = ["localhost","127.0.0.1",
+                 "https://7a15-202-164-149-48.ngrok-free.app"]
 
 
 # Application definition
@@ -86,31 +87,22 @@ CACHES = {
     }
 }
 
-# SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
-# SESSION_CACHE_ALIAS = 'default'
 
-
-CELERY_BROKER_URL = 'redis://redis:6379/0'
-CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
-CELERY_RESULT_BACKEND = 'redis://redis:6379/0'
-CELERY_RESULT_EXTENDED = True
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL')
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP =True
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND')
+CELERY_RESULT_EXTENDED=True
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
 
-# SESSION_COOKIE_AGE = 1209600  # 2 weeks
-# SESSION_SAVE_EVERY_REQUEST = True
-# SESSION_EXPIRE_AT_BROWSER_CLOSE = True
-# SESSION_ENGINE = "django.contrib.sessions.backends.cached_db",
-# SESSION_COOKIE_HTTPONLY = True
-# SESSION_COOKIE_SAMESITE = None
 
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:5173',
-    'http://127.0.0.1:5173',
-    'http://127.0.0.1:8006',
-]
+    os.getenv('ALLOWED_ORIGINS_1'),
+    os.getenv('ALLOWED_ORIGINS_2'),
+    os.getenv('ALLOWED_ORIGINS_3'),
+    ]
 
 
 ROOT_URLCONF = 'Usermanagement.urls'
@@ -140,17 +132,11 @@ WSGI_APPLICATION = 'Usermanagement.wsgi.application'
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql_psycopg2",
-        # "NAME": os.getenv('DB_NAME'),
-        # "USER": os.getenv('DB_USER'),
-        # "PASSWORD": os.getenv('DB_PASSWORD'),
-        # "HOST": os.getenv('DB_HOST'),
-        # "PORT": os.getenv('DB_PORT'),
-        "NAME": 'usermanagement_studyzed',
-        "USER": 'fmn',
-        "PASSWORD": 'mrlionbyte',
-        "HOST": 'db',
-        "PORT": 5432,
- 
+        "NAME": os.getenv('DB_NAME'),
+        "USER": os.getenv('DB_USER'),
+        "PASSWORD": os.getenv('DB_PASSWORD'),
+        "HOST": os.getenv('DB_HOST'),
+        "PORT": os.getenv('DB_PORT'),
     }
 }
 
@@ -227,10 +213,9 @@ SIMPLE_JWT = {
 AUTH_USER_MODEL = 'AuthApp.UserAddon'
 
 
-# EMAIL_BACKEND = 'djcelery_email.backends.CeleryEmailBackend'
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS')
+EMAIL_USE_TLS=True
 EMAIL_PORT = os.environ.get('EMAIL_PORT')
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
@@ -240,6 +225,6 @@ cloudinary.config(
     cloud_name = os.environ.get('cloudinary_cloud_name'), 
     api_key = os.environ.get('cloudinary_api_key'), 
     api_secret = os.environ.get('cloudinary_api_secret'),
-    secure=os.environ.get('cloudinary_secure')
+    cloudinary_secure=True
 )
 

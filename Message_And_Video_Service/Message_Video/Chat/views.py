@@ -22,7 +22,6 @@ def get_chatted_user(request, user_code):
     
     # if not current_user:
         user_decoded_data = decode_jwt_token(request)
-        print("DECODED :",user_decoded_data)
         current_user = User.objects.create(
             user_id = str(user_decoded_data.get("user_id")),
             user_code=user_decoded_data.get("user_code"),

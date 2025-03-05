@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
-
+import os
 from pathlib import Path
 from dotenv import load_dotenv
 from datetime import timedelta
@@ -23,12 +23,12 @@ load_dotenv()
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-u)ux-u+f*o6i*!@5ytm6d(hmfkp1xe1%thmc+9&2ny7vawj(o5"
+SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
+ALLOWED_HOSTS = [os.environ.get('ALLOWED_HOSTS_1'), os.environ.get('ALLOWED_HOSTS_2')]
 
 
 # Application definition
@@ -140,9 +140,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",  
-    "http://127.0.0.1:5173",  
-    "http://messages_management:8006",
+    os.environ.get('CORS_ALLOWED_ORIGINS_1'),  
+    os.environ.get('CORS_ALLOWED_ORIGINS_2'),  
+    os.environ.get('CORS_ALLOWED_ORIGINS_3'),
 ]
 
 
@@ -161,9 +161,9 @@ CORS_ALLOW_HEADERS = [
     "x-csrftoken",
 ]
 
-JWT_SECRET_KEY = "django-insecure-3=e8t28jwtmlds(kq1qfu)8&1!2ysi7hm8l^(8&q@8&w2r0-b9"
+JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY')
 
-MONGO_URI = "mongodb+srv://fanunaf25:80dbT2D5ClGpNZKl@studyzedmessages.xfxnr.mongodb.net/Notification?retryWrites=true&w=majority&appName=StudyZedMessages"
+MONGO_URI = os.environ.get('MONGO_URI')
 
 CACHES = {
     'default': {
@@ -175,9 +175,9 @@ CACHES = {
     }
 }
 
-CELERY_BROKER_URL = 'redis://redis_service_2:6379/0' 
+CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL')
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
-CELERY_RESULT_BACKEND = 'redis://redis_service_2:6379/0' 
+CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND')
 
 CELERY_RESULT_EXTENDED = True
 CELERY_ACCEPT_CONTENT = ['json']

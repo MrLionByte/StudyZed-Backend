@@ -27,9 +27,9 @@ load_dotenv(dotenv_path=env_path)
 SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG')
+DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = [os.getenv('ALLOWED_HOSTS')]
 
 # CORS
 
@@ -57,8 +57,8 @@ INSTALLED_APPS = [
 
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:5173',
-    'http://127.0.0.1:5173',
+    os.environ.get('CORS_ALLOWED_ORIGINS_1'),
+    os.environ.get('CORS_ALLOWED_ORIGINS_2'),
 ]
 
 
@@ -102,8 +102,7 @@ WSGI_APPLICATION = "Payment.wsgi.application"
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        # "NAME": 'payment_management_studyzed',
-        "NAME": 'payment_studyzed',
+        "NAME": os.getenv('DB_NAME'),
         "USER": os.getenv('DB_USER'),
         "PASSWORD": os.getenv('DB_PASSWORD'),
         # "HOST": 'localhost',
@@ -161,6 +160,6 @@ STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET')
 # stripe listen --forward-to http://127.0.0.1:8008/session-buy/stripe-webhook/
 # stripe listen --forward-to http://127.0.0.1:8008/wallet/stripe-webhook/
 
-SITE_URL = 'http://localhost:5173'
+SITE_URL = os.getenv('SITE_URL')
 
 JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY')

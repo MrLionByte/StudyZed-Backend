@@ -7,13 +7,12 @@ from .authentication import JWTAuthentication
 from django.utils.functional import SimpleLazyObject
 from .user_management import get_or_create_user
 
-class JWTForWebsocketMiddleware(BaseMiddleware):
+class JWTForWebRTCMiddleware(BaseMiddleware):
     async def __call__(self, scope, receive=None, send=None):
         close_old_connections()
         query = scope.get("query_string", b"").decode("utf-8")
         query_parameters =  dict(qp.split("=") for qp in query.split("&"))
         token = query_parameters.get("token", None)
-        
         if not token:
             await send({
                 "type": "websocket.close",
@@ -32,7 +31,6 @@ class JWTForWebsocketMiddleware(BaseMiddleware):
             if not user:
                 await self.close_connection(self, send, 4002)
                 return
-            # scope["user"] = SimpleLazyObject(lambda: user)
             scope["user"] = user
             return await super().__call__(scope, receive, send)
 
