@@ -8,6 +8,7 @@ class Assessments(models.Model):
     assessment_title = models.CharField(max_length=250)
     assessment_description = models.TextField(blank=True)
     created_on = models.DateField(auto_now_add=True)
+    total_mark = models.PositiveIntegerField(default=0)
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
     
@@ -27,6 +28,18 @@ class Assessment_Questions(models.Model):
         ],
         default="OPEN",
     )
+    
+    def save(self, *args, **kwargs):
+        self.assessment_key.total_mark += self.max_score
+        if self.pk:
+            old_mark = Assessment_Questions.objects.get(
+                pk=self.pk).max_score
+            self.assessment_key.total_mark -= old_mark
+        
+        self.assessment_key.total_mark += self.max_score
+        self.assessment_key.save()
+        
+        super().save(*args, **kwargs)
     
     def __str__(self):
         return f"{self.assessment_key} => {self.question_type}"

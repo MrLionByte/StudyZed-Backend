@@ -8,6 +8,7 @@ from .models import Assessments, Assessment_Questions, Answer_Options, Session
 from assessment_student_side.models import StudentAssessment, StudentAssessmentResponse
 from django.db import transaction
 from django.db.models import F
+from decimal import Decimal, DecimalException
 
 # Create your views here.
 
@@ -74,15 +75,24 @@ class UpdateMarkForAssessmentView(APIView):
                     student_response.mark = mark
                     student_response.save()
                     
-                    assessment = student_response.student_assessment
-                    assessment.score = F('score') + int(mark)
-                    assessment.save(update_fields=['score'])
+                    if student_response.student_assessment.score:
+                        student_response.student_assessment.score += Decimal(mark)
+                        student_response.student_assessment.save()
+                    else:
+                        student_response.student_assessment.score = Decimal(mark)
+                        student_response.student_assessment.save()
+                
                 except StudentAssessmentResponse.DoesNotExist:
                     return Response({
                         'error': f'Response with ID {id} not found'
                     }, status=status.HTTP_404_NOT_FOUND)
-                
-            return Response(status=status.HTTP_202_ACCEPTED)
+                except Exception as e:
+                    print("Exception :",e)
+                    return Response({
+                        'error': str(e)
+                    }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                    
+                return Response(status=status.HTTP_202_ACCEPTED)
         
         except Exception as e:
             return Response({

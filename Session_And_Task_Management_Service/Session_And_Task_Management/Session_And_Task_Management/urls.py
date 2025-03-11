@@ -30,6 +30,14 @@ urlpatterns = [
     path('assessment-student/', include('assessment_student_side.urls')),
     path('task-student/', include('task_student_side.urls')),
     
+    path('progress/', include('progress.urls')),
+    path('student-progress/', include('progress_Student_side.urls')),
+    
+    path('study-material/', include('studymaterial.urls')),
+    
+    path('dashboard-tutor/', include('dashboard_tutor.urls')),
+    path('dashboard-student/', include('dashboard_student.urls')),
+    
     path('session-admin/', include('admin_app.urls')),
     
 ]

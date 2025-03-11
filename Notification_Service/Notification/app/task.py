@@ -35,10 +35,16 @@ def send_notification():
         user_token = get_user_firebase_token(notification.user_code)
         
         if user_token:
+            
+            extra_data = {
+                "due_time": str(notification.due_time) if notification.due_time else "0",
+                "type": notification.type or ""
+            }
             success, response = send_firebase_notification(
                 registration_id=user_token,
                 title=notification.title,
-                body=notification.message
+                body=notification.message,
+                extra_data=extra_data
             )
 
             if success:

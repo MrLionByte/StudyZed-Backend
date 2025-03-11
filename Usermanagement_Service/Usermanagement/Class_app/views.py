@@ -1,5 +1,5 @@
 from rest_framework import generics, views, status
-from .serializers import AllStudentsInAClassSerializer
+from .serializers import AllStudentsInAClassSerializer, BatchMatesInAClassSerializer
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from AuthApp.models import UserAddon
@@ -38,4 +38,15 @@ class TutorOfSessionDetailsView(views.APIView):
             "tutor_username": tutor.username
         }
         return Response({"data": data}, status=status.HTTP_200_OK)
-    
+
+
+class AllBatchMatesInAClassView (views.APIView):
+    def post(self, request):
+        student_codes = request.data
+        print(student_codes)
+        if not student_codes:
+            return Response({"error": "No student codes provided"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        students = UserAddon.objects.filter(user_code__in=student_codes)
+        serializer = BatchMatesInAClassSerializer(students, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

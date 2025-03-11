@@ -150,7 +150,6 @@ class CustomTokenRefreshSerializer(TokenRefreshSerializer):
         user_uid = decoded_payload['user_id']
         
         user = UserAddon.objects.get(id=user_uid)
-        
 
         decoded_payload['role'] = user.role
         decoded_payload['email'] = user.email

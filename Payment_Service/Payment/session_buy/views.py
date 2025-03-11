@@ -11,14 +11,14 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.conf import settings
-from .permissions import TutorAccessPermission
 from wallet.models import WalletTransactions, Wallet
 from decimal import Decimal
+from rest_framework.permissions import AllowAny
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 # print jwt token
 class StripeCheckoutView(APIView):
-    permission_classes = [TutorAccessPermission]
+    permission_classes = [AllowAny]
     
     def post(self, request):
         try:

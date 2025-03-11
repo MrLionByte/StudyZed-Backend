@@ -1,4 +1,4 @@
-from rest_framework import generics
+from rest_framework import generics, views
 from rest_framework_simplejwt import authentication
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from .models import StudentsInSession
@@ -30,3 +30,37 @@ class StudentSessionView(generics.ListAPIView):
             raise ValidationError("student_code query parameter is required.")
         
         return StudentsInSession.objects.filter(student_code=student_code)
+    
+class MyBatchMatesInSessionView(views.APIView):
+    permission_classes = [AllowAny]
+    
+    def get(self, request, *args, **kwargs):
+        try:
+            session_code = request.query_params.get('session_code')
+            
+            if not session_code:
+                raise ValidationError("query need session_code")
+            
+            session = Session.objects.get(session_code=session_code)
+            
+            student_codes = list(
+                StudentsInSession.objects.filter(session=session, is_allowded=True)
+                .values_list("student_code", flat=True)
+            )
+            
+            return Response(student_codes, status=status.HTTP_200_OK)
+
+        except Session.DoesNotExist:
+            return Response(
+                {"error": "Session with the given session_code does not exist."}, 
+                status=status.HTTP_404_NOT_FOUND)
+        
+        except ValidationError as e:
+            return Response(
+                {"error": str(e)}, 
+                status=status.HTTP_400_BAD_REQUEST)
+        
+        except Exception as e:
+            return Response({"error": str(e)}, 
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+

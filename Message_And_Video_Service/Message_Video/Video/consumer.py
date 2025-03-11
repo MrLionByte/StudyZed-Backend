@@ -287,6 +287,7 @@ class LiveSessionOneToOneConsumer(AsyncWebsocketConsumer):
         self.room_group_name = f'video_call_{"_".join(user_ids)}'
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.accept()
+        print("Connected Group Name :",self.room_group_name)
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)

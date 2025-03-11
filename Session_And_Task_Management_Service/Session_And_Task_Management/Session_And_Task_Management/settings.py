@@ -59,11 +59,15 @@ INSTALLED_APPS = [
     "assessment_student_side",
     "task_tutor_side",
     "task_student_side",
+    'studymaterial',
+    'dashboard_tutor',
+    'dashboard_student',
     
     'cloudinary',
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
+    
     # 'celery',
     # 'django_celery_beat',
     

@@ -1,6 +1,6 @@
 from rest_framework import permissions
 from rest_framework.exceptions import AuthenticationFailed
-
+from session_buy.permissions import TutorAccessPermission
 import jwt
 from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
 from rest_framework import permissions

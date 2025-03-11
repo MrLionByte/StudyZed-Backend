@@ -3,6 +3,7 @@ from students_in_session.models import StudentsInSession, Session
 from assessment_tutor_side.models import (
     Assessments, Assessment_Questions, Answer_Options)
 from django.utils.timezone import make_aware, is_aware
+from django.db.models import Sum
 # Create your models here.
 
 class StudentAssessment(models.Model):

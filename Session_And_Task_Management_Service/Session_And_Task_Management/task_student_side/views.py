@@ -12,12 +12,13 @@ from django.utils.timezone import now
 from .jwt_utils import decode_jwt_token
 from rest_framework.exceptions import ValidationError
 from session_tutor.producer import kafka_producer
+from students_in_session.permissions import StudentAccessPermission
 # Create your views here.
 
     
 class GetAllTasksForStudentView(generics.ListAPIView):
     serializer_class = TasksThisMonthSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [StudentAccessPermission]
 
     def get_queryset(self):
         today = now()
@@ -32,7 +33,7 @@ class GetAllTasksForStudentView(generics.ListAPIView):
 
 
 class AttendTasksView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [StudentAccessPermission]
 
     def post(self, request, *args, **kwargs):
         task_id = request.data.get("task_id")

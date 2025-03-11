@@ -87,7 +87,7 @@ class TutorsSessionsView(generics.ListAPIView):
             raise ValidationError("tutor_code query parameter is required.")
 
         try:
-            return Session.objects.filter(tutor_code=tutor_code)
+            return Session.objects.filter(tutor_code=tutor_code).order_by('created_at')
         except Exception as e:
             print("VIEW ERROR:", e)
             raise ValidationError("An error occurred while fetching sessions.")

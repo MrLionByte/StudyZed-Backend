@@ -34,10 +34,13 @@ class LiveSessionOneToOne(Document):
 class LiveSessionGroup(Document):
     session = StringField(required=True)
     host = ReferenceField(User, required=True)
-    participants = ListField(ReferenceField(User))
+    participants = ListField(ReferenceField(User), null=True)
+    description = StringField(null=True)
     started_at = DateTimeField(null=True)
+    scheduled_time = StringField(null=True)
     ended_at = DateTimeField(null=True)
-    status = StringField(choices=['live', 'ended'], default='live')
+    status = StringField(choices=['scheduled','live', 'ended'], default='scheduled')
+    
     
     def start_call(self):
         """Activates the session if the scheduled time has arrived."""

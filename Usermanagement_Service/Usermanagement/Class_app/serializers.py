@@ -24,3 +24,15 @@ class AllStudentsInAClassSerializer(serializers.ModelSerializer):
             "last_name",
             "profile",
         ]
+        
+class BatchMatesInAClassSerializer(serializers.ModelSerializer):
+    profile = ProfileSerializer(required=False)
+
+    class Meta:
+        model = UserAddon
+        fields = [
+            "username",
+            "user_code",
+            "first_name",
+            "profile"
+        ]

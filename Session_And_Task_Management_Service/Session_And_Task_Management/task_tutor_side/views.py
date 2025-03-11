@@ -14,12 +14,12 @@ from django.utils import timezone
 from session_tutor.producer import kafka_producer
 from students_in_session.models import StudentsInSession
 from django.core.serializers import serialize
-
+from session_tutor.permissions import TutorAccessPermission
 # Create your views here.
 
 class CreateNewTaskView(generics.CreateAPIView):
     serializer_class = TasksSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [TutorAccessPermission]
     queryset = Tasks.objects.all()
     
     def create(self, request, *args, **kwargs):
@@ -79,7 +79,7 @@ class GetAllTasksView(APIView):
         return Response(serializer.data)
 
 class EditTaskView(generics.UpdateAPIView):
-    permission_classes = [AllowAny]
+    permission_classes = [TutorAccessPermission]
     serializer_class = TaskEditSerializer
     queryset = Tasks.objects.filter(due_date__gte=timezone.now())
     lookup_field = 'id'
@@ -105,7 +105,7 @@ class EditTaskView(generics.UpdateAPIView):
                 status=status.HTTP_202_ACCEPTED)
        
 class GiveMarkForDailyTaskView(generics.UpdateAPIView):
-    permission_classes = [AllowAny]
+    permission_classes = [TutorAccessPermission]
     queryset = AssignedTask.objects.all()
     serializer_class = AssignedTaskScoreSerializer
 
