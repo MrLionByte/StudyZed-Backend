@@ -2,5 +2,7 @@
 .env
 /data/
 
-# Ignore virtual environments
-venv/
+.vscode
+
+# Ignore logs
+/logs/
