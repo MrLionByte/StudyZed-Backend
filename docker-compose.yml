@@ -1,4 +1,3 @@
-# version: '3.8'
 services:
   session_task_db:
     container_name: session_task_db
@@ -11,11 +10,6 @@ services:
       - POSTGRES_DB=session_task_management_studyzed
       - POSTGRES_USER=fmn
       - POSTGRES_PASSWORD=mrlionbyte
-    # healthcheck:
-    #   test: ["CMD-SHELL", "pg_isready -U fmn"]
-    #   interval: 10s
-    #   timeout: 5s
-    #   retries: 5
   
   session_and_task_management:
     container_name: session_and_task_management
@@ -31,12 +25,6 @@ services:
     volumes:
       - ./Session_And_Task_Management_Service/Session_And_Task_Management:/app
     
-    
-    # healthcheck:
-    #   test: ["CMD-SHELL", "echo > /dev/tcp/kafka/9092"]
-    #   interval: 10s
-    #   timeout: 5s
-    #   retries: 5
   
   payment_db:
     container_name: payment_db
@@ -49,12 +37,7 @@ services:
       - POSTGRES_DB=payment_studyzed
       - POSTGRES_USER=fmn
       - POSTGRES_PASSWORD=mrlionbyte
-    # healthcheck:
-    #   test: ["CMD-SHELL", "pg_isready -U fmn"]
-    #   interval: 10s
-    #   timeout: 5s
-    #   retries: 5
-  
+
   payment_management:
     container_name: payment_management
     build: 
@@ -68,7 +51,6 @@ services:
       - kafka
     volumes:
       - ./Payment_Service/Payment:/app
-    # command: supervisord -c /etc/supervisor/conf.d/supervisord.conf
 
   messages_management:
     container_name: messages_management
@@ -97,7 +79,7 @@ services:
       - ./Notification_Service/Notification:/app
 
   zookeeper:
-    image: 'bitnami/zookeeper:latest'
+    image: 'bitnami/zookeeper:3.9'
     container_name: zookeeper
     ports:
       - '2181:2181'
@@ -108,7 +90,7 @@ services:
       - zookeeper_data:/bitnami/zookeeper
 
   kafka:
-    image: 'bitnami/kafka:latest'
+    image: 'bitnami/kafka:3.9'
     container_name: kafka
     ports:
       - '9092:9092'
@@ -146,21 +128,6 @@ services:
       - CELERY_RESULT_BACKEND=redis://redis:6379
     depends_on:
       - redis
-
-  # celery_beat:
-  #   build: 
-  #     context: ./Notification_Service/Notification/
-  #     dockerfile: Dockerfile
-  #   container_name: celery_beat
-  #   command: celery -A Notification.celery beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
-  #   volumes:
-  #     - ./Notification_Service/Notification:/app
-  #   environment:
-  #     - CELERY_BROKER_URL=redis://redis:6379
-  #     - CELERY_RESULT_BACKEND=redis://redis:6379
-  #   depends_on:
-  #     - redis
-  #     - notification_management
 
 volumes:
   session_task_db:

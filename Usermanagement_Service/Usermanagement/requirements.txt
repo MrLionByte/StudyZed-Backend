@@ -1,6 +1,5 @@
 amqp==5.3.1
 asgiref==3.8.1
-autopep8==2.3.1
 billiard==4.2.1
 cachetools==5.5.0
 celery==5.4.0
@@ -18,11 +17,9 @@ django-celery-results==2.5.1
 django-cors-headers==4.5.0
 django-environ==0.12.0
 django-redis==5.4.0
-django-silk==5.3.2
 djangorestframework==3.15.2
 djangorestframework-simplejwt==5.3.1
 google-auth==2.37.0
-gprof2dot==2024.6.6
 Jinja2==3.1.4
 kombu==5.4.2
 MarkupSafe==3.0.2
@@ -31,7 +28,6 @@ prompt_toolkit==3.0.48
 psycopg2-binary==2.9.10
 pyasn1==0.6.1
 pyasn1_modules==0.4.1
-pycodestyle==2.12.1
 PyJWT==2.10.1
 python-dateutil==2.9.0.post0
 python-dotenv==1.0.1

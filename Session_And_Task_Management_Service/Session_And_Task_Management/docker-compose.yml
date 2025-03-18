@@ -27,7 +27,7 @@ services:
       - .:/app
   
   zookeeper:
-    image: 'bitnami/zookeeper:latest'
+    image: 'bitnami/zookeeper:3.9'
     container_name: zookeeper
     ports:
       - '2181:2181'
@@ -36,7 +36,7 @@ services:
       - ZOO_LOG4J_PROP=log4j.rootLogger=OFF, stdout
 
   kafka:
-    image: 'bitnami/kafka:latest'
+    image: 'bitnami/kafka:3.4'
     container_name: kafka
     ports:
       - '9092:9092'

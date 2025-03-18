@@ -1,0 +1,48 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: studyzed-ingress
+  namespace: studyzed
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx 
+  rules:
+  - host: studyzed.local
+    http:
+      paths:
+      - path: /user
+        pathType: Prefix
+        backend:
+          service:
+            name: user-service
+            port:
+              number: 8005
+      - path: /message-video
+        pathType: Prefix
+        backend:
+          service:
+            name: message-video-service
+            port:
+              number: 8006
+      - path: /notification
+        pathType: Prefix
+        backend:
+          service:
+            name: notification-service
+            port:
+              number: 8007
+      - path: /session
+        pathType: Prefix
+        backend:
+          service:
+            name: session-task-service
+            port:
+              number: 8009
+      - path: /payment
+        pathType: Prefix
+        backend:
+          service:
+            name: payment-service
+            port:
+              number: 8008

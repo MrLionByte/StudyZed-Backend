@@ -20,7 +20,7 @@ import cloudinary, cloudinary.uploader, cloudinary.api
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-env_path = BASE_DIR / '.env'
+env_path = BASE_DIR / ".env"
 load_dotenv(dotenv_path=env_path)
 
 
@@ -28,17 +28,17 @@ load_dotenv(dotenv_path=env_path)
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY = os.getenv("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv("DEBUG")
 
-ALLOWED_HOSTS = [os.getenv('ALLOWED_HOSTS')]
+ALLOWED_HOSTS = [os.getenv("ALLOWED_HOSTS")]
 
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
-    os.getenv('CORS_ALLOWED_ORIGINS_1'),
-    os.getenv('CORS_ALLOWED_ORIGINS_2'),
+    os.getenv("CORS_ALLOWED_ORIGINS_1"),
+    os.getenv("CORS_ALLOWED_ORIGINS_2"),
 ]
 
 # Application definition
@@ -50,7 +50,6 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    
     "session_tutor",
     "assessment_tutor_side",
     "admin_app",
@@ -59,23 +58,20 @@ INSTALLED_APPS = [
     "assessment_student_side",
     "task_tutor_side",
     "task_student_side",
-    'studymaterial',
-    'dashboard_tutor',
-    'dashboard_student',
-    
-    'cloudinary',
-    'rest_framework',
-    'rest_framework_simplejwt',
-    'corsheaders',
-    
+    "studymaterial",
+    "dashboard_tutor",
+    "dashboard_student",
+    "cloudinary",
+    "rest_framework",
+    "rest_framework_simplejwt",
+    "corsheaders",
+    "silk",
     # 'celery',
     # 'django_celery_beat',
-    
 ]
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
-    
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -83,6 +79,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "silk.middleware.SilkyMiddleware",
 ]
 
 ROOT_URLCONF = "Session_And_Task_Management.urls"
@@ -110,13 +107,13 @@ WSGI_APPLICATION = "Session_And_Task_Management.wsgi.application"
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        "NAME": os.getenv('DB_NAME'),
-        "USER":  os.getenv('DB_USER'),
-        "PASSWORD":  os.getenv('DB_PASSWORD'),
-        "HOST":  os.getenv('DB_HOST'),
-        "PORT":  os.getenv('DB_PORT'),
+    "default": {
+        "ENGINE": "django.db.backends.postgresql_psycopg2",
+        "NAME": os.getenv("DB_NAME"),
+        "USER": os.getenv("DB_USER"),
+        "PASSWORD": os.getenv("DB_PASSWORD"),
+        "HOST": os.getenv("DB_HOST"),
+        "PORT": os.getenv("DB_PORT"),
     }
 }
 
@@ -161,9 +158,9 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY')
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
 
 
 REST_FRAMEWORK = {
-    'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
+    "EXCEPTION_HANDLER": "rest_framework.views.exception_handler",
 }

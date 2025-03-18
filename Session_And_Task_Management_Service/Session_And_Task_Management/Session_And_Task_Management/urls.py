@@ -40,4 +40,6 @@ urlpatterns = [
     
     path('session-admin/', include('admin_app.urls')),
     
-]
+] 
+
+urlpatterns += [path('silk/', include('silk.urls', namespace='silk'))]

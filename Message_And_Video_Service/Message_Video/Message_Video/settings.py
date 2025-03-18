@@ -31,9 +31,11 @@ SECRET_KEY = os.environ["SECRET_KEY"]
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = [os.environ["ALLOWED_HOSTS_1"], 
-                 os.environ["ALLOWED_HOSTS_2"], 
-                 os.environ["ALLOWED_HOSTS_3"]]
+ALLOWED_HOSTS = [
+    os.environ["ALLOWED_HOSTS_1"],
+    os.environ["ALLOWED_HOSTS_2"],
+    os.environ["ALLOWED_HOSTS_3"],
+]
 
 
 # Application definition
@@ -45,19 +47,16 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    
     "channels",
     "rest_framework",
     "mongoengine",
     "corsheaders",
-    
     "Chat",
     "Video",
 ]
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
-    
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -69,9 +68,9 @@ MIDDLEWARE = [
 
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
-    os.environ['CORS_ALLOWED_ORIGINS_1'],  
-    os.environ['CORS_ALLOWED_ORIGINS_2'],  
-    os.environ['CORS_ALLOWED_ORIGINS_3'],
+    os.environ["CORS_ALLOWED_ORIGINS_1"],
+    os.environ["CORS_ALLOWED_ORIGINS_2"],
+    os.environ["CORS_ALLOWED_ORIGINS_3"],
 ]
 
 
@@ -113,33 +112,14 @@ ASGI_APPLICATION = "Message_Video.asgi.application"
 WSGI_APPLICATION = "Message_Video.wsgi.application"
 
 
-# CHANNEL_LAYERS = {
-#     'default': {
-#         'BACKEND': 'channels_redis.core.RedisChannelLayer',
-#         'CONFIG': {
-#             'hosts': ['redis://redis:6379/1'],       
-#         },
-#     },
-# }
-
-# CHANNEL_LAYERS = {
-#     "default": {
-#         "BACKEND": "channels.layers.InMemoryChannelLayer"
-#     }
-# }
-
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            'hosts': [('redis_service_2', 6379)],
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [(os.environ["REDIS"], os.environ["REDIS_PORT"])],
         },
     }
 }
-
-# Database
-# https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-
 
 DATABASES = {
     "default": {
@@ -174,7 +154,7 @@ AUTH_PASSWORD_VALIDATORS = [
 LANGUAGE_CODE = "en-us"
 
 # TIME_ZONE = "UTC"
-TIME_ZONE = 'Asia/Kolkata'
+TIME_ZONE = "Asia/Kolkata"
 
 USE_I18N = True
 
@@ -191,9 +171,9 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-JWT_SECRET_KEY = os.environ['JWT_SECRET_KEY']
+JWT_SECRET_KEY = os.environ["JWT_SECRET_KEY"]
 
-MONGO_URI =  os.environ['MONGO_URI']
+MONGO_URI = os.environ["MONGO_URI"]
 
 WEBRTC_ICE_SERVERS = [
     {"urls": "stun:stun.l.google.com:19302"},
@@ -207,4 +187,3 @@ WEBRTC_ICE_SERVERS = [
 ]
 
 # To Run daphne -b 0.0.0.0 -p 8000 Message_Video.asgi:application
-

@@ -1,4 +1,4 @@
-#!/home/mrlionbyte/Project/Study-Zed/venv/bin/python
+#!/home/mrlionbyte/Project/Study-Zed/BackendServices/Usermanagement_Service/venv/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys

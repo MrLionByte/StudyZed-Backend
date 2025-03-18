@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celery-worker
+  namespace: studyzed
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: celery-worker
+  template:
+    metadata:
+      labels:
+        app: celery-worker
+    spec:
+      initContainers:
+      - name: wait-for-redis
+        image: busybox
+        command: ['sh', '-c', 'until nc -z redis-service 6379; do echo waiting for redis; sleep 2; done;']
+      containers:
+      - name: celery-worker
+        image: usermanagement:latest
+        imagePullPolicy: IfNotPresent
+        command: ["celery", "-A", "user_service", "worker", "--loglevel=info"]
+        envFrom:
+        - configMapRef:
+            name: celery-worker-config
+        - secretRef:
+            name: celery-worker-secrets
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "250m"
+            memory: "256Mi"
