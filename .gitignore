@@ -10,3 +10,15 @@ __pycache__/
 
 # Ignore Django migrations
 */migrations/
+
+*.log
+*.sqlite3
+
+*.pyc
+*.pyovenv/
+__pycache__/
+*.pyc
+*.pyo
+migrations/
+data/db/
+logs/
