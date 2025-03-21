@@ -2,6 +2,7 @@ from django.db import models
 from django.core.validators import RegexValidator
 from cloudinary.models import CloudinaryField
 import uuid
+from django.utils.translation import gettext_lazy as _
 
 # Create your models here.
 
@@ -21,7 +22,13 @@ class Session(models.Model):
     is_paid = models.BooleanField(default=False)
     is_active = models.BooleanField(default=False)
     # auto_signin = models.BooleanField(default=False)
-    image = CloudinaryField("image", blank=True)
+    image = models.ImageField(
+        _("Session Card Picture"),
+        upload_to="uploads/session/", 
+        height_field=None, 
+        width_field=None, 
+        max_length=255,
+    )
     created_at = models.DateField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     

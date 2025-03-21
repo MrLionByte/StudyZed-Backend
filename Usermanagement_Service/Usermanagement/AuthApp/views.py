@@ -46,13 +46,14 @@ logger = logging.getLogger(__name__)
 
 
 class SignupEmailProcedureView(generics.CreateAPIView):
-    """_summary_
+    """
+    Handles email verification during the signup process.
 
     Args:
-        generics (_type_): _description_
+        request (Request): The HTTP/HTTPS request containing the email to be verified.
 
     Returns:
-        _type_: _description_
+        _type_: Response: A response indicating whether the email verification was successful or failed.
     """
 
     permission_classes = [AllowAny]
@@ -140,13 +141,13 @@ class SignupEmailProcedureView(generics.CreateAPIView):
 
 
 class SignupOTPVerificationView(generics.CreateAPIView):
-    """_summary_
+    """Handles otp verification process during signup.
 
     Args:
-        generics (_type_): _description_
+        request (Request): The HTTP/HTTPS request containing the otp to be verified.
 
     Returns:
-        _type_: _description_
+        Response: A response indicating whether the otp verification was successful or failed.
     """
 
     permission_classes = [AllowAny]
@@ -213,13 +214,14 @@ class SignupOTPVerificationView(generics.CreateAPIView):
 
 
 class SignupOTPResendView(generics.CreateAPIView):
-    """_summary_
+    """
+        Handles OTP resend during the signup process if the OTP has expired.
 
     Args:
-        generics (_type_): _description_
+        request (Request): The HTTP request containing the email for which OTP should be resent.
 
     Returns:
-        _type_: _description_
+        Response: A response indicating whether the OTP resend was successful or failed.
     """
 
     permission_classes = [AllowAny]
@@ -278,13 +280,14 @@ class SignupOTPResendView(generics.CreateAPIView):
 
 
 class SignupUserDetailsView(generics.CreateAPIView):
-    """_summary_
+    """
+    Handles user registration after email verification.
 
     Args:
-        generics (_type_): _description_
+        request (Request): The HTTP request containing user details for signup.
 
     Returns:
-        _type_: _description_
+        Response: A response indicating whether the user was successfully created or if an error occurred.
     """
 
     permission_classes = [AllowAny]
@@ -348,13 +351,14 @@ class SignupUserDetailsView(generics.CreateAPIView):
 
 
 class SignupWithGoogleAccountView(generics.CreateAPIView):
-    """_summary_
+    """
+    Handles user signup and login using a Google account.
 
     Args:
-        generics (_type_): _description_
+        request (Request): The HTTP request containing Google ID and user details.
 
     Returns:
-        _type_: _description_
+        Response: A response indicating whether the user was logged in or a new account was created.
     """
 
     permission_classes = [AllowAny]
@@ -433,13 +437,15 @@ class SignupWithGoogleAccountView(generics.CreateAPIView):
 
 
 class LoginView(APIView):
-    """_summary_
+    """
+    Handles user login, including validation, authentication, and token generation.
 
     Args:
-        APIView (_type_): _description_
+        request (Request): The HTTP request containing login credentials.
 
     Returns:
-        _type_: _description_
+        Response: A response with authentication tokens if login is successful,
+        or an error message if validation fails or the user is locked out.
     """
 
     permission_classes = [AllowAny]
@@ -552,10 +558,24 @@ class LoginView(APIView):
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
+    """
+    Custom views for obtaining jwt token.
+
+    CustomTokenObtainPairView:
+        Uses a custom serializer to generate access and refresh tokens.
+    """
+
     serializer_class = CustomTokenObtainPairSerializer
 
 
 class CustomTokenRefreshView(TokenRefreshView):
+    """
+    Custom views for refreshing JWT tokens.
+
+    CustomTokenRefreshView:
+        Uses a custom serializer to refresh expired access tokens.
+    """
+
     serializer_class = CustomTokenRefreshSerializer
 
 
@@ -566,13 +586,14 @@ class CustomTokenRefreshView(TokenRefreshView):
 
 
 class ForgotPasswordEmailView(APIView):
-    """_summary_
+    """
+    Handles the process of initiating a password reset by sending a reset email.
 
     Args:
-        APIView (_type_): _description_
+        APIView (APIView): Inherits from Django REST framework's APIView.
 
     Returns:
-        _type_: _description_
+        Response: A response indicating whether the email was sent successfully or failed.
     """
 
     permission_classes = [AllowAny]
@@ -630,47 +651,62 @@ class ForgotPasswordEmailView(APIView):
 
 
 class ForgottenPasswordOTPView(APIView):
-    """_summary_
+    """
+    Handles OTP verification during the password reset process.
 
     Args:
-        APIView (_type_): _description_
+        APIView (APIView): Inherits from Django REST framework's APIView.
 
     Returns:
-        _type_: _description_
+        Response: A response indicating whether the OTP verification was successful or failed.
     """
 
     permission_classes = [AllowAny]
 
     def post(self, request):
-        if request.data["email"]:
-            redis_temp = redis_client.hgetall(request.data["email"])
-            if not request.data["otp"] == redis_temp["otp"]:  # type: ignore
-                return Response(
-                    {
-                        "message": "OTP is incorrect",
-                        "auth-status": "failed",
-                    },
-                    status=status.HTTP_404_NOT_FOUND,
-                )
-
-            redis_temp["is_authenticated"] = True  # type: ignore
+        email = request.data.get("email")
+        otp = request.data.get("otp")
+        
+        if not email or not otp:
             return Response(
-                {
-                    "message": "Email verification success",
-                    "auth-status": "success",
-                },
-                status=status.HTTP_200_OK,
+                {"error": "Email and OTP are required"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
+        redis_temp = redis_client.hgetall(email)
+  
+        if not redis_temp or "otp" not in redis_temp:
+            return Response(
+                {"error": "OTP expired or invalid"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if otp != redis_temp["otp"]:
+            return Response(
+                {"message": "OTP is incorrect", "auth-status": "failed"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        redis_temp["is_authenticated"] = True  # type: ignore
+        redis_client.hmset(email, redis_temp)
+        
+        return Response(
+            {
+                "message": "Email verification success",
+                "auth-status": "success",
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class ForgottenPasswordNewPassword(APIView):
-    """_summary_
+    """
+    Handles setting a new password after OTP verification.
 
     Args:
-        APIView (_type_): _description_
+        APIView (APIView): Inherits from Django REST framework's APIView.
 
     Returns:
-        _type_: _description_
+        Response: A response indicating whether the password change was successful or failed.
     """
 
     permission_classes = [AllowAny]
@@ -721,25 +757,25 @@ class ForgottenPasswordNewPassword(APIView):
 
 
 class LogoutView(APIView):
-    """_summary_
+    """
+    Handles user logout by blacklisting the refresh token.
 
     Args:
-        APIView (_type_): _description_
+        APIView (APIView): Inherits from Django REST framework's APIView.
 
     Returns:
-        _type_: _description_
+        Response: A response indicating whether the logout was successful or failed.
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
         try:
-            refresh_token = request.data["refresh_token"]
+            refresh_token = request.data.get("refresh")
             token = RefreshToken(refresh_token)
             token.blacklist()
             return Response(status=status.HTTP_205_RESET_CONTENT)
         except Exception as e:
-            print("LOGOUT ERROR :", e)
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
 

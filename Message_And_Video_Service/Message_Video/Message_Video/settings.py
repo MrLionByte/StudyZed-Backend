@@ -73,6 +73,7 @@ CORS_ALLOWED_ORIGINS = [
     os.environ["CORS_ALLOWED_ORIGINS_3"],
 ]
 
+print( os.environ["CORS_ALLOWED_ORIGINS_1"],os.environ["CORS_ALLOWED_ORIGINS_2"],os.environ["CORS_ALLOWED_ORIGINS_3"],)
 
 CORS_ALLOW_METHODS = [
     "GET",

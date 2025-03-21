@@ -83,3 +83,12 @@ class ApprovedStudentsInSessions(serializers.ModelSerializer):
     class Meta:
         model = StudentsInSession
         fields = ["student_code"]
+
+    
+class UpdateSessionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Session
+        fields = '__all__'
+
+    def update(self, instance, validated_data):
+        return super().update(instance, validated_data)

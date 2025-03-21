@@ -28,8 +28,7 @@ class StripeCheckoutView(APIView):
             session_code = request.data.get('session_code')
             amount = Decimal(request.data.get('amount'))*100  # Amount in cents (e.g., $10 = 1000)
 
-            # session_key = Subscription.objects.get(session_code=session_code, tutor_code=tutor_code)
-            # print("SESSIOn KEY :",session_key)
+            
             print("AS :: AS", amount, tutor_code, session_code)
             checkout_session = stripe.checkout.Session.create(
                 line_items=[
@@ -54,15 +53,6 @@ class StripeCheckoutView(APIView):
                     'session_code': session_code,
                 },
             )
-            print("AFTER SESSIOn :",checkout_session)
-            
-            # payment = Payment.objects.create(
-            #     subscription_key=session_key,
-            #     amount=amount / 100,
-            #     transaction_id=checkout_session.payment_intent,
-            #     status="success",
-            # )
-            # print("PAYMENT:", payment)
             
             return Response({
                 'checkout_url': checkout_session.url,

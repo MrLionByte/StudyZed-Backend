@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, views
 from rest_framework.decorators import api_view, permission_classes
 from .models import (User ,OneToOneMessage, 
                      OpenChatRoom, OpenChatMessage)
@@ -119,5 +119,12 @@ def get_chat_history(request, user_code, selected_user_code):
             {'error': str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
-        
-    
+
+
+class MessageFromTheHomePage(views.APIView):
+    def post(self, request, *args, **kwargs):
+        data = request.data
+        print(data)
+        return Response({
+            'message': 'successfully sent message'
+            }, status=status.HTTP_202_ACCEPTED)

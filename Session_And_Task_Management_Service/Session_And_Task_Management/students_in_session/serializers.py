@@ -62,3 +62,19 @@ class StudentSessionSerializer(serializers.ModelSerializer):
             'joined_on',
             'updated_on',
         ]
+
+class GetSessionSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = Session
+        fields = [
+             'tutor_code',
+             'session_name',
+             'session_grade',
+             'session_duration',
+             'session_discription',
+             'session_code','is_paid',
+             'is_active',
+             'image',
+             'created_at',
+             'updated_at'
+        ]

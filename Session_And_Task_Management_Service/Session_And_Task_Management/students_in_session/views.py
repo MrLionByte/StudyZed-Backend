@@ -14,7 +14,6 @@ from .permissions import StudentAccessPermission
 # Create your views here.
 
 class StudentEnterSessionView(generics.CreateAPIView):
-    print("ASDASDSADASD")
     permission_classes = [StudentAccessPermission]
     queryset = StudentsInSession.objects.all()
     serializer_class = EnterSessionSerializer
@@ -64,3 +63,14 @@ class MyBatchMatesInSessionView(views.APIView):
             return Response({"error": str(e)}, 
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
+class GetSessionDetailsView(generics.ListAPIView):
+    serializer_class = GetSessionSerializers
+    permission_classes = [AllowAny]
+    
+    def get_queryset(self):    
+        session_code = self.request.query_params.get('session_code')
+        if not session_code:
+            raise ValidationError("session is required.")
+        
+        return Session.objects.filter(session_code=session_code)

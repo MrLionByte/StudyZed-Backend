@@ -4,7 +4,13 @@ from rest_framework_simplejwt import authentication
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from .models import Session
 from students_in_session.models import StudentsInSession
-from .serializers import CreateSessionSerializers, TutorSessionSerializer, AllStudentInSessions, ApprovedStudentsInSessions
+from .serializers import (
+    CreateSessionSerializers, 
+    TutorSessionSerializer, 
+    AllStudentInSessions, 
+    ApprovedStudentsInSessions,
+    UpdateSessionSerializer,
+    )
 from rest_framework.response import Response
 from rest_framework import status
 from .utils.responses import api_response
@@ -160,3 +166,29 @@ class StudentsDataInSessionView(APIView):
             return Response({"error": str(e)}, 
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
+class UpdateSessionViews(generics.UpdateAPIView):
+    serializer_class = UpdateSessionSerializer
+    permission_classes = [AllowAny]
+    
+    def get_object(self):
+        try:
+            session_code = self.request.data
+            print(session_code)
+            session = Session.objects.get(session_code=session_code)
+            return session
+        except Session.DoesNotExist:
+            raise NotFound("Session not found.")
+
+    def patch(self, request):
+        session_to_be_updated = self.get_object()
+        print("session to be updated:", session_to_be_updated)
+        serializer = self.get_serializer(
+            session_to_be_updated, data=request.data, partial=True
+        )
+        if serializer.is_valid():
+            serializer.save()
+            print("Update Successful")
+            return Response(serializer.data, status=200)
+        print("Validation Errors:", serializer.errors)
+        return Response(serializer.errors, status=400)
