@@ -281,18 +281,29 @@ jobs:
             --zone ${{ secrets.GCP_ZONE }} \
             --project ${{ secrets.GCP_PROJECT_ID }}
 
+      - name: Debug - Show deployment details
+        run: |
+          echo "Checking container names in deployments:"
+          kubectl describe deployment user-service -n studyzed | grep -A 5 "Containers:"
+          kubectl describe deployment payment-service -n studyzed | grep -A 5 "Containers:"
+          kubectl describe deployment session-and-task-service -n studyzed | grep -A 5 "Containers:"
+          kubectl describe deployment notification-service -n studyzed | grep -A 5 "Containers:"
+          kubectl describe deployment communication-service -n studyzed | grep -A 5 "Containers:"
+          kubectl describe deployment celery-worker -n studyzed | grep -A 5 "Containers:"
+          kubectl describe deployment celery-worker-notification -n studyzed | grep -A 5 "Containers:"
+
       - name: Update Deployments
         run: |
-          # Update main services
-          kubectl set image deployment/user-service=mrlionbyte/user-management:v1.4.4.4 -n studyzed
-          kubectl set image deployment/payment-service=mrlionbyte/payment-management:v1.4.1.6 -n studyzed
-          kubectl set image deployment/session-and-task-service=mrlionbyte/session-and-task-management:v1.4.2.1 -n studyzed
-          kubectl set image deployment/notification-service=mrlionbyte/notification-management:v1.4.4.0 -n studyzed
-          kubectl set image deployment/communication-service=mrlionbyte/messages-management:v1.4.3.9 -n studyzed
+          # Update main services - Replace <container-name> with actual container names
+          kubectl set image deployment/user-service <container-name>=mrlionbyte/user-management:v1.4.4.4 -n studyzed
+          kubectl set image deployment/payment-service <container-name>=mrlionbyte/payment-management:v1.4.1.6 -n studyzed
+          kubectl set image deployment/session-and-task-service <container-name>=mrlionbyte/session-and-task-management:v1.4.2.1 -n studyzed
+          kubectl set image deployment/notification-service <container-name>=mrlionbyte/notification-management:v1.4.4.0 -n studyzed
+          kubectl set image deployment/communication-service <container-name>=mrlionbyte/messages-management:v1.4.3.9 -n studyzed
           
-          # Update worker services
-          kubectl set image deployment/celery-worker celery-worker=mrlionbyte/usermanagement-celery_worker:v1.4.1.4 -n studyzed
-          kubectl set image deployment/celery-worker-notification celery-worker-notification=mrlionbyte/celery-worker-notification:v1.3.7 -n studyzed
+          # Update worker services - Replace <container-name> with actual container names
+          kubectl set image deployment/celery-worker <container-name>=mrlionbyte/usermanagement-celery_worker:v1.4.1.4 -n studyzed
+          kubectl set image deployment/celery-worker-notification <container-name>=mrlionbyte/celery-worker-notification:v1.3.7 -n studyzed
 
       - name: Verify Deployment
         run: |
