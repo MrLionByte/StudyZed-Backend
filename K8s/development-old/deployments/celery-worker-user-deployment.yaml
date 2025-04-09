@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celery-worker
+  namespace: studyzed
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: celery-worker
+  template:
+    metadata:
+      labels:
+        app: celery-worker
+    spec:
+      containers:
+      - name: celery-worker
+        image: mrlionbyte/usermanagement-celery_worker:v1.4.0
+        command: ["celery", "-A", "Usermanagement", "worker", "--loglevel=debug"]
+        env:
+        - name: CELERY_BROKER_URL
+          value: "redis://redis-service:6379"
+        - name: CELERY_RESULT_BACKEND
+          value: "redis://redis-service:6379"
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: user-service-secrets
+              key: SECRET_KEY
+        - name: EMAIL_USE_TLS
+          valueFrom:
+            secretKeyRef:
+              name: user-service-secrets
+              key: EMAIL_USE_TLS
+        - name: EMAIL_PORT
+          valueFrom:
+            secretKeyRef:
+              name: user-service-secrets
+              key: EMAIL_PORT
+        - name: EMAIL_HOST_USER
+          valueFrom:
+            secretKeyRef:
+              name: user-service-secrets
+              key: EMAIL_HOST_USER
+        - name: EMAIL_HOST_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: user-service-secrets
+              key: EMAIL_HOST_PASSWORD
+        resources:
+          limits:
+            memory: "1Gi"
+            cpu: "300m"
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+
+        readinessProbe:
+          exec:
+            command: ["celery", "-A", "Usermanagement", "inspect", "ping"]
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        livenessProbe:
+          exec:
+            command: ["celery", "-A", "Usermanagement", "inspect", "ping"]
+          initialDelaySeconds: 60
+          periodSeconds: 30

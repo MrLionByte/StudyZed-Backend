@@ -1,0 +1,27 @@
+# Ignore Python cache & environment
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+.env
+
+# Ignore logs and database files
+*.log
+*.sqlite3
+db.sqlite3
+
+# Ignore Git and dependencies
+.git/
+.gitignore
+
+# Ignore Docker-related files
+.dockerignore
+Dockerfile
+
+# Ignore Kubernetes YAMLs (optional)
+*.yaml
+*.yml
+
+logs
+data

@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: session-and-task-service
+  namespace: studyzed
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: session-and-task-service
+  template:
+    metadata:
+      labels:
+        app: session-and-task-service
+    spec:
+      containers:
+      - name: session-and-task-service
+        image: mrlionbyte/session-and-task-management:v1.4.0
+        ports:
+          - containerPort: 8009
+        envFrom:
+          - secretRef:
+              name: session-and-task-service-secrets
+        env:
+        - name: DATABASE_HOST
+          value: "session-task-db"
+        - name: DATABASE_PORT
+          value: "5432"
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          value: "kafka:9092"
+
+        resources:
+          limits:
+            memory: "1Gi"
+            cpu: "300m"
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: session-and-task-service
+  namespace: studyzed
+spec:
+  selector:
+    app: session-and-task-service
+  ports:
+  - protocol: TCP
+    port: 8009
+    targetPort: 8009
+  type: ClusterIP

@@ -1,0 +1,54 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:16
+    container_name: db
+    volumes:
+      - ./data/db:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=usermanagement_studyzed
+      - POSTGRES_USER=fmn
+      - POSTGRES_PASSWORD=mrlionbyte
+    ports:
+      - "5435:5432"
+  
+  usermanagement:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: usermanagement
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+    ports:
+      - "8005:8000"
+    depends_on:
+      - db
+      - redis
+  
+  redis:
+    image: redis:6-alpine
+    container_name: redis_service
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  celery_worker:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: celery_worker
+    command: celery -A Usermanagement worker --loglevel=info
+    volumes:
+      - .:/app
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379
+      - CELERY_RESULT_BACKEND=redis://redis:6379
+    depends_on:
+      - redis
+
+
+volumes:
+  db:
+  redis_data:

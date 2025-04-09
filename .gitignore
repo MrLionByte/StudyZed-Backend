@@ -1,0 +1,30 @@
+/data/db/
+
+# Ignore all virtual environments
+venv/
+*/venv/
+
+# Ignore Python cache files
+__pycache__/
+*.py[cod]
+
+# Ignore Django migrations
+*/migrations/
+
+*.log
+*.sqlite3
+
+*.pyc
+*.pyovenv/
+__pycache__/
+*.pyc
+*.pyo
+migrations/
+data/db/
+logs/
+
+# kuber secrets
+K8s/production/secrets
+K8s/development-old/secrets
+
+.github

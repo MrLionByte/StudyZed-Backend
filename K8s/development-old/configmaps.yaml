@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: project-config
+  namespace: studyzed
+data:
+  project.yml: |
+    global:
+      scrape_interval: 15s
+
+    scrape_configs:
+      - job_name: 'project'
+        static_configs:
+          - targets: ['project:9090']
+
+      - job_name: 'user_service'
+        static_configs:
+          - targets: ['user-service:8005']
+
+      - job_name: 'session_task_service'
+        static_configs:
+          - targets: [session-task-service:8009']
+
+      - job_name: 'payment_service'
+        static_configs:
+          - targets: ['payment_service:8008']
+
+      - job_name: 'notification_service'
+        static_configs:
+          - targets: ['notification-service:8006']
+
+      - job_name: 'communication_service'
+        static_configs:
+          - targets: ['communication-service:8007']
+
+      - job_name: 'kafka'
+        static_configs:
+          - targets: ['kafka:9092']

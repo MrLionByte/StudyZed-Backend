@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: studyzed-tls
+  namespace: studyzed  # Change to your service's namespace
+spec:
+  secretName: studyzed-tls-secret
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - study-zed-api.farhanmn.site

@@ -1,0 +1,8 @@
+.gitignore/
+.env
+/data/
+
+.vscode
+
+# Ignore logs
+/logs/

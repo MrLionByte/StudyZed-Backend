@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-service
+  namespace: studyzed
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payment-service
+  template:
+    metadata:
+      labels:
+        app: payment-service
+    spec:
+      containers:
+      - name: payment-service
+        image: mrlionbyte/payment-management:v1.4.1.4
+        ports:
+          - containerPort: 8008
+        envFrom:
+          - secretRef:
+              name: payment-service-secrets
+        env:
+        - name: DATABASE_HOST
+          value: "payment-db"
+        - name: DATABASE_PORT
+          value: "5432"
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          value: "kafka:9092"
+       
+        resources:
+          limits:
+            memory: "1Gi"
+            cpu: "300m"
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-service
+  namespace: studyzed
+spec:
+  selector:
+    app: payment-service
+  ports:
+  - protocol: TCP
+    port: 8008
+    targetPort: 8008
+  type: ClusterIP

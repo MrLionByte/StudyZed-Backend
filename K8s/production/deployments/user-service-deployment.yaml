@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  namespace: studyzed
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+      - name: user-service
+        image: mrlionbyte/user-management:v1.4.4.4
+        ports:
+          - containerPort: 8005
+        envFrom:
+          - secretRef:
+              name: user-service-secrets
+        env:
+        - name: DATABASE_HOST
+          value: "user-db"
+        - name: DATABASE_PORT
+          value: "5432"
+        - name: REDIS_HOST
+          value: "redis-service"
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: user-service-secrets
+              key: SECRET_KEY
+        - name: HOST_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+
+        livenessProbe:
+          httpGet:
+            path: "/healthz/"
+            port: 8005
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          failureThreshold: 3
+
+        readinessProbe:
+          httpGet:
+            path: "/healthz/"
+            port: 8005
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          failureThreshold: 3
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+  namespace: studyzed
+spec:
+  selector:
+    app: user-service
+  ports:
+    - protocol: TCP
+      port: 8005
+      targetPort: 8005
+  type: ClusterIP
