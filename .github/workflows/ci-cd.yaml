@@ -269,6 +269,12 @@ jobs:
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
 
+      - name: Install gke-gcloud-auth-plugin
+        run: |
+          gcloud components install gke-gcloud-auth-plugin -q
+          gcloud components update -q
+          which gke-gcloud-auth-plugin || echo "Plugin not found in PATH"
+
       - name: Authenticate kubectl with GKE
         run: |
           gcloud container clusters get-credentials ${{ secrets.GKE_CLUSTER_NAME }} \
