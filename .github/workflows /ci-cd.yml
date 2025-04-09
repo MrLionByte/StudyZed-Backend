@@ -1,0 +1,302 @@
+# name: CI/CD
+
+# on:
+#   push:
+#     branches:
+#       - main
+#     paths:
+#       - 'server/**'
+#       - '!server/k8s/**'
+#       - '!server/docker-compose.yml'
+
+# jobs:
+#   code-quality:
+#     runs-on: ubuntu-latest
+#     steps:
+#     - name: Checkout code
+#       uses: actions/checkout@v4
+#       with:
+#         fetch-depth: 0
+        
+#     - name: SonarQube Scan
+#       uses: SonarSource/sonarqube-scan-action@v4
+#       env:
+#         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+#   deploy-to-gke:
+#     needs: code-quality
+#     runs-on: ubuntu-latest
+
+#     steps:
+#     - name: Checkout code
+#       uses: actions/checkout@v4
+
+#     - name: Set up Google Cloud SDK
+#       uses: google-github-actions/setup-gcloud@v2
+#       with:
+#         project_id: ${{ secrets.GCP_PROJECT_ID }}
+#         service_account_key: ${{ secrets.GCP_SA_KEY }}
+#         export_default_credentials: true
+
+#     - name: Authenticate kubectl with GKE
+#       run: |
+#         gcloud container clusters get-credentials ${{ secrets.GKE_CLUSTER_NAME }} \
+#           --zone ${{ secrets.GCP_ZONE }} \
+#           --project ${{ secrets.GCP_PROJECT_ID }}
+
+
+#     - name: Set Image Tags for Deployments
+#       run: |
+#         kubectl set image deployment/user-deployment user=mrlionbyte/user-management:v1.4.4.2 -n studyzed
+#         kubectl set image deployment/payment-deployment payment=mrlionbyte/payment-management:v1.4.1.5 -n studyzed
+#         kubectl set image deployment/session-deployment session=mrlionbyte/session-and-task-management:v1.4.2.0 -n studyzed
+#         kubectl set image deployment/notification-deployment notification=mrlionbyte/notification-management:v1.4.4.0 -n studyzed
+#         kubectl set image deployment/message-deployment message=mrlionbyte/messages-management:v1.4.3.6 -n studyzed
+#         kubectl set image deployment/usermanagement-celery userworker=mrlionbyte/usermanagement-celery_worker:v1.4.1.4 -n studyzed
+#         kubectl set image deployment/notification-celery notifyworker=mrlionbyte/celery-worker-notification:v1.3.7 -n studyzed
+
+#     - name: Verify Deployment
+#       run: |
+#         kubectl rollout status deployment/user-deployment -n studyzed
+#         kubectl get pods -n studyzed
+
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'server/**'
+      - '!server/k8s/**'
+      - '!server/docker-compose.yml'
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [user, payment, session, notification, message]
+        include:
+          - service: user
+            dockerfile: Usermanagement_Service/Usermanagement/Dockerfile
+            image_name: user-management
+            current_version: v1.4.4.4
+            deployment_name: user-service
+            container_name: user
+          - service: payment
+            dockerfile: Payment_Service/Payment/Dockerfile
+            image_name: payment-management
+            current_version: v1.4.1.6
+            deployment_name: payment-service
+            container_name: payment
+          - service: session
+            dockerfile: Session_And_Task_Management_Service/Session_And_Task_Management/Dockerfile
+            image_name: session-and-task-management
+            current_version: v1.4.2.1
+            deployment_name: session-and-task-service
+            container_name: session
+          - service: notification
+            dockerfile: Notification_Service/Notification/Dockerfile
+            image_name: notification-management
+            current_version: v1.4.4.0
+            deployment_name: notification-service
+            container_name: notification
+          - service: message
+            dockerfile: Message_And_Video_Service/Message_Video/Dockerfile
+            image_name: messages-management
+            current_version: v1.4.3.9
+            deployment_name: communication-service
+            container_name: message
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Increment version number
+      - name: Increment version
+        id: version
+        run: |
+          # Parse current_version in format v1.4.4.4
+          CURRENT_VERSION="${{ matrix.current_version }}"
+          
+          # Split version into components
+          MAJOR=$(echo $CURRENT_VERSION | cut -d. -f1 | sed 's/v//')
+          MINOR=$(echo $CURRENT_VERSION | cut -d. -f2)
+          PATCH=$(echo $CURRENT_VERSION | cut -d. -f3)
+          BUILD=$(echo $CURRENT_VERSION | cut -d. -f4)
+          
+          # Increment the build number
+          NEW_BUILD=$((BUILD + 1))
+          NEW_TAG="v${MAJOR}.${MINOR}.${PATCH}.${NEW_BUILD}"
+          
+          echo "new_tag=$NEW_TAG" >> $GITHUB_OUTPUT
+          echo "New version tag: $NEW_TAG for ${{ matrix.service }}"
+
+      - name: Build and push
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: |
+            mrlionbyte/${{ matrix.image_name }}:${{ steps.version.outputs.new_tag }}
+            mrlionbyte/${{ matrix.image_name }}:latest
+          cache-from: type=registry,ref=mrlionbyte/${{ matrix.image_name }}:latest
+          cache-to: type=inline
+
+  build-and-push-workers:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        worker: [celery-worker, celery-worker-notification]
+        include:
+          - worker: celery-worker
+            dockerfile: Usermanagement_Service/Usermanagement/Dockerfile
+            image_name: usermanagement-celery_worker
+            current_version: v1.4.1.4
+            deployment_name: celery-worker
+            container_name: celery-worker
+          - worker: celery-worker-notification
+            dockerfile: Notification_Service/Notification/Dockerfile
+            image_name: celery-worker-notification
+            current_version: v1.3.7
+            deployment_name: celery-worker-notification
+            container_name: celery-worker-notification
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Increment version number based on the current version
+      - name: Increment version
+        id: version
+        run: |
+          # Parse current_version
+          CURRENT_VERSION="${{ matrix.current_version }}"
+          
+          # Split version into components
+          MAJOR=$(echo $CURRENT_VERSION | cut -d. -f1 | sed 's/v//')
+          MINOR=$(echo $CURRENT_VERSION | cut -d. -f2)
+          PATCH=$(echo $CURRENT_VERSION | cut -d. -f3)
+          BUILD=$(echo $CURRENT_VERSION | cut -d. -f4)
+          
+          # Increment the build number
+          NEW_BUILD=$((BUILD + 1))
+          NEW_TAG="v${MAJOR}.${MINOR}.${PATCH}.${NEW_BUILD}"
+          
+          echo "new_tag=$NEW_TAG" >> $GITHUB_OUTPUT
+          echo "New version tag: $NEW_TAG for ${{ matrix.worker }}"
+
+      - name: Build and push
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: |
+            mrlionbyte/${{ matrix.image_name }}:${{ steps.version.outputs.new_tag }}
+            mrlionbyte/${{ matrix.image_name }}:latest
+          cache-from: type=registry,ref=mrlionbyte/${{ matrix.image_name }}:latest
+          cache-to: type=inline
+
+  deploy-to-gke:
+    needs: [build-and-push, build-and-push-workers]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
+          export_default_credentials: true
+
+      - name: Authenticate kubectl with GKE
+        run: |
+          gcloud container clusters get-credentials ${{ secrets.GKE_CLUSTER_NAME }} \
+            --zone ${{ secrets.GCP_ZONE }} \
+            --project ${{ secrets.GCP_PROJECT_ID }}
+
+      # Get the new versions from the build jobs
+      - name: Get new versions for each service
+        run: |
+          # Create a function to get the new version tag for each image
+          get_new_version() {
+            local image_name=$1
+            local current_version=$2
+            
+            # Split version into components
+            MAJOR=$(echo $current_version | cut -d. -f1 | sed 's/v//')
+            MINOR=$(echo $current_version | cut -d. -f2)
+            PATCH=$(echo $current_version | cut -d. -f3)
+            BUILD=$(echo $current_version | cut -d. -f4)
+            
+            # Increment the build number
+            NEW_BUILD=$((BUILD + 1))
+            echo "v${MAJOR}.${MINOR}.${PATCH}.${NEW_BUILD}"
+          }
+          
+          # Get new version tags for each service
+          USER_TAG=$(get_new_version "user-management" "v1.4.4.4")
+          PAYMENT_TAG=$(get_new_version "payment-management" "v1.4.1.6")
+          SESSION_TAG=$(get_new_version "session-and-task-management" "v1.4.2.1")
+          NOTIFICATION_TAG=$(get_new_version "notification-management" "v1.4.4.0")
+          MESSAGE_TAG=$(get_new_version "messages-management" "v1.4.3.9")
+          CELERY_WORKER_TAG=$(get_new_version "usermanagement-celery_worker" "v1.4.1.4")
+          NOTIFICATION_CELERY_TAG=$(get_new_version "celery-worker-notification" "v1.3.7")
+          
+          # Store in environment for next step
+          echo "USER_TAG=$USER_TAG" >> $GITHUB_ENV
+          echo "PAYMENT_TAG=$PAYMENT_TAG" >> $GITHUB_ENV
+          echo "SESSION_TAG=$SESSION_TAG" >> $GITHUB_ENV
+          echo "NOTIFICATION_TAG=$NOTIFICATION_TAG" >> $GITHUB_ENV
+          echo "MESSAGE_TAG=$MESSAGE_TAG" >> $GITHUB_ENV
+          echo "CELERY_WORKER_TAG=$CELERY_WORKER_TAG" >> $GITHUB_ENV
+          echo "NOTIFICATION_CELERY_TAG=$NOTIFICATION_CELERY_TAG" >> $GITHUB_ENV
+
+      - name: Update Deployments
+        run: |
+          # Update main services
+          kubectl set image deployment/user-service user=mrlionbyte/user-management:${USER_TAG} -n studyzed
+          kubectl set image deployment/payment-service payment=mrlionbyte/payment-management:${PAYMENT_TAG} -n studyzed
+          kubectl set image deployment/session-and-task-service session=mrlionbyte/session-and-task-management:${SESSION_TAG} -n studyzed
+          kubectl set image deployment/notification-service notification=mrlionbyte/notification-management:${NOTIFICATION_TAG} -n studyzed
+          kubectl set image deployment/communication-service message=mrlionbyte/messages-management:${MESSAGE_TAG} -n studyzed
+          
+          # Update worker services
+          kubectl set image deployment/celery-worker celery-worker=mrlionbyte/usermanagement-celery_worker:${CELERY_WORKER_TAG} -n studyzed
+          kubectl set image deployment/celery-worker-notification celery-worker-notification=mrlionbyte/celery-worker-notification:${NOTIFICATION_CELERY_TAG} -n studyzed
+
+      - name: Verify Deployment
+        run: |
+          kubectl rollout status deployment/user-service -n studyzed
+          kubectl rollout status deployment/payment-service -n studyzed
+          kubectl rollout status deployment/session-and-task-service -n studyzed
+          kubectl rollout status deployment/notification-service -n studyzed
+          kubectl rollout status deployment/communication-service -n studyzed
+          kubectl rollout status deployment/celery-worker -n studyzed
+          kubectl rollout status deployment/celery-worker-notification -n studyzed
+          echo "Listing all pods in studyzed namespace:"
+          kubectl get pods -n studyzed
