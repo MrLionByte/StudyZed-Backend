@@ -8,8 +8,9 @@ from students_in_session.models import StudentsInSession
 from confluent_kafka.error import ProduceError
 from django.conf import settings
 
+print("PRODUCER :::", settings.BOOTSTRAP_SERVERS)
 class KafkaProducer:
-    def __init__(self, bootstrap_servers='kafka:9092'):
+    def __init__(self, bootstrap_servers=str(settings.BOOTSTRAP_SERVERS)):
         self.producer = Producer({
             'bootstrap.servers' : bootstrap_servers
             })

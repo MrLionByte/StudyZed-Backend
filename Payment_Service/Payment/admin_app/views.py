@@ -1,8 +1,11 @@
 from rest_framework import generics
 from .serializers import AdminSessionPaymentViewSerializer
-from session_buy.models import Subscription
+from session_buy.models import Subscription,Payment
 from rest_framework.exceptions import NotFound
-
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.db.models import Sum
 # Create your views here.
 
 
@@ -21,4 +24,18 @@ class GetPaymentOfSessionView(generics.ListAPIView):
             session_code=session_code,
             tutor_code=tutor_code
         ).prefetch_related("payment_set")
-    
+
+class TotalRevenueView(APIView):
+    """
+    API endpoint to get the total revenue from successful payments
+    """
+    def get(self, request):
+        total_revenue = Payment.objects.filter(
+            status="success"
+        ).aggregate(
+            total=Sum('amount')
+        )['total'] or 0
+        
+        return Response({
+            'total_revenue': total_revenue
+        }, status=status.HTTP_200_OK)

@@ -22,3 +22,9 @@ __pycache__/
 migrations/
 data/db/
 logs/
+
+# kuber secrets
+K8s/production/secrets
+K8s/development-old/secrets
+
+.github

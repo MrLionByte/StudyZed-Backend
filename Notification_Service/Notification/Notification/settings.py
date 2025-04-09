@@ -26,10 +26,9 @@ load_dotenv()
 SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DEBUG")
 
-ALLOWED_HOSTS = [os.environ.get('ALLOWED_HOSTS_1'), os.environ.get('ALLOWED_HOSTS_2')]
-
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
 
 # Application definition
 
@@ -50,9 +49,8 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware",
-    
     "django.middleware.security.SecurityMiddleware",
+    "corsheaders.middleware.CorsMiddleware", 
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -138,13 +136,8 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = [
-    os.environ.get('CORS_ALLOWED_ORIGINS_1'),  
-    os.environ.get('CORS_ALLOWED_ORIGINS_2'),  
-    os.environ.get('CORS_ALLOWED_ORIGINS_3'),
-]
-
+CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
+CORS_ALLOW_CREDENTIALS = False
 
 CORS_ALLOW_METHODS = [
     "GET",
@@ -156,9 +149,17 @@ CORS_ALLOW_METHODS = [
 ]
 
 CORS_ALLOW_HEADERS = [
-    "authorization",
-    "content-type",
-    "x-csrftoken",
+    "Authorization",
+    "Content-Type",
+    "X-CSRFToken",
+    "x-requested-with",
+    "Accept",
+    "Origin",
+    "Cache-Control",
+    "X-Requested-With",
+    "Sec-Fetch-Mode",
+    "Sec-Fetch-Dest",
+    "Sec-Fetch-Site",
 ]
 
 JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY')
@@ -168,7 +169,7 @@ MONGO_URI = os.environ.get('MONGO_URI')
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': 'redis://redis_service_2:6379/2',
+        'LOCATION': os.environ.get('LOCATION'),
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
         }
@@ -184,10 +185,16 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
 
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+
 CELERY_BEAT_SCHEDULE = {
     'check-tomorrow-reminders': {
-        'task': 'send_reminder_notification',
-        'schedule': crontab(hour=12, minute=0), 
+        'task': 'app.tasks.send_reminder_notification', 
+        'schedule': crontab(hour=12, minute=0),
+    },
+    'send-pending-notifications': {
+        'task': 'app.tasks.send_notification', 
+        'schedule': crontab(hour='*/2', minute=0),
     },
 }
 
@@ -195,7 +202,7 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            'hosts': [('redis_service_2', 6379)], 
+            "hosts": [(os.environ["REDIS"], os.environ["REDIS_PORT"])],
         },
     }
 }
@@ -203,3 +210,30 @@ CHANNEL_LAYERS = {
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': None,
 }
+
+BOOTSTRAP_SERVERS = os.getenv('BOOTSTRAP_SERVERS' , "kafka:9092")
+
+# LOGGING = {
+#     "version": 1,
+#     "disable_existing_loggers": False,
+#     "formatters": {
+#         "verbose": {
+#             "format": "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
+#             "datefmt": "%Y-%m-%d %H:%M:%S",
+#         },
+#     },
+#     "handlers": {
+#         "console": {
+#             "class": "logging.StreamHandler",
+#         },
+#         "file": {
+#             "class": "logging.FileHandler",
+#             "filename": os.path.join(BASE_DIR, "logs", "app.log"),
+#             "formatter": "verbose",
+#         },
+#     },
+#     "root": {
+#         "handlers": ["console", "file"],
+#         "level": "DEBUG",
+#     },
+# }

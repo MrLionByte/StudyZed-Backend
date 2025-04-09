@@ -7,27 +7,14 @@ ENV PYTHONUNBUFFERED 1
 
 WORKDIR /app
 
-COPY requirements.txt /app/
+COPY run.py requirements.txt /app/
 
-RUN pip install -r requirements.txt 
+RUN chmod +x /app/run.py && \
+    pip install -r requirements.txt 
 
-COPY . /app/
+COPY . /app
 
 EXPOSE 8000
 
-
-
-# RUN apt-get update && \
-#     apt-get install -y --no-install-recommends supervisor && \
-#     pip install --no-cache-dir --upgrade pip && \
-#     pip install -r requirements.txt && \
-#     apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# RUN mkdir -p /etc/supervisor/conf.d
-
-# COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-
-
-# EXPOSE 8000
-
-# CMD ["supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+# CMD ["python", "/app/run.py"]
+CMD ["bash", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:8008 & python manage.py consume_messages"]

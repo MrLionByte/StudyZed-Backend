@@ -39,7 +39,8 @@
 
 from django_celery_beat.models import PeriodicTask, CrontabSchedule
 
-schedule, _ = CrontabSchedule.objects.get_or_create(
+
+daily_schedule, _ = CrontabSchedule.objects.get_or_create(
     minute='0',
     hour='22',
     day_of_week='*',
@@ -49,7 +50,39 @@ schedule, _ = CrontabSchedule.objects.get_or_create(
 
 PeriodicTask.objects.get_or_create(
     name='Send Daily Notifications',
-    task='app.task.send_notification', 
-    crontab=schedule,
+    task='app.tasks.send_notification',
+    crontab=daily_schedule,
+    enabled=True,
+)
+
+backup_interval, _ = IntervalSchedule.objects.get_or_create(
+    every=2,
+    period=IntervalSchedule.HOURS,
+)
+
+notification_interval, _ = IntervalSchedule.objects.get_or_create(
+    every=15,
+    period=IntervalSchedule.MINUTES,
+)
+
+PeriodicTask.objects.get_or_create(
+    name='Process New Notifications',
+    task='app.tasks.send_notification',
+    interval=notification_interval,
+    enabled=True,
+)
+
+reminder_schedule, _ = CrontabSchedule.objects.get_or_create(
+    minute='0',
+    hour='8,17',  # Run at 8 AM and 5 PM
+    day_of_week='*',
+    day_of_month='*',
+    month_of_year='*',
+)
+
+PeriodicTask.objects.get_or_create(
+    name='Process Upcoming Reminders',
+    task='app.tasks.process_upcoming_reminders',
+    crontab=reminder_schedule,
     enabled=True,
 )

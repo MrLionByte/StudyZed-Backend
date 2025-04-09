@@ -11,4 +11,6 @@ urlpatterns = [
     path('schedule-group-session/', ScheduleAGroupVideoMeetingSessionView.as_view()),
     path('change-session-status/', ChangeStatusOfMeet.as_view()),
     
+    path('admin/video-meet-stats/', VideoMeetStatsView.as_view(), name='video-meet-stats'),
+
 ]

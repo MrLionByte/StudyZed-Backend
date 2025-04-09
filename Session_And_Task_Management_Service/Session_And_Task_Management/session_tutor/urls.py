@@ -5,6 +5,7 @@ from .views import *
 urlpatterns = [
     path('create-session/', CreateSessionView.as_view()),
     path('view-session/', GetSessionView.as_view()),
+    path('update-session/', UpdateSessionViews.as_view()),
     
     path('tutor-sessions/', TutorsSessionsView.as_view()),
     

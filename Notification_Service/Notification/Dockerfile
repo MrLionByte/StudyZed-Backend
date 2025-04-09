@@ -7,12 +7,16 @@ ENV DJANGO_SETTINGS_MODULE=Notification.settings
 
 WORKDIR /app
 
-COPY requirements.txt /app/
+COPY run.py requirements.txt /app/
 
-RUN pip install --no-cache-dir -r requirements.txt
+RUN chmod +x /app/run.py && \
+    pip install --no-cache-dir -r requirements.txt && \
+    mkdir -p /celery-worker && \
+    chmod -R 777 /celery-worker
+
 
 COPY . /app
 
-# CMD ["gunicorn", "-b", "0.0.0.0:8000", "app.wsgi:application"]
+EXPOSE 8007
 
-EXPOSE 8000
+CMD ["bash", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:8007 & python manage.py consume_messages"]

@@ -22,14 +22,11 @@ class StripeCheckoutView(APIView):
     
     def post(self, request):
         try:
-            print("REQUESt DAAT :",request.data)
             session_name = request.data.get('session_name')
             tutor_code = request.data.get('tutor_code')
             session_code = request.data.get('session_code')
             amount = Decimal(request.data.get('amount'))*100  # Amount in cents (e.g., $10 = 1000)
 
-            
-            print("AS :: AS", amount, tutor_code, session_code)
             checkout_session = stripe.checkout.Session.create(
                 line_items=[
                     {

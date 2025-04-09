@@ -10,6 +10,8 @@ from channels.db import database_sync_to_async
 from redis.asyncio import Redis
 from .jwt_decode import decode_jwt_token_for_chat
 from mongoengine.queryset.visitor import Q 
+from django.conf import settings
+import redis.asyncio as redis_async
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
@@ -18,15 +20,18 @@ class ChatConsumer(AsyncWebsocketConsumer):
         self.redis = None
     
     async def get_redis(self):
-        if not self.redis:
-            self.redis = Redis(
-                host='redis_service_2', 
-                port=6379,              
-                decode_responses=True,
-                retry_on_timeout=True,
-                socket_keepalive=True
-            )
-        
+        redis_host = "redis-service"
+        redis_port = 6379
+        print(f"Attempting to connect to Redis at {redis_host}:{redis_port}")
+        redis_url = f"redis://{redis_host}:{redis_port}/2"
+        print(f"Redis URL: {redis_url}")
+        self.redis = redis_async.from_url(
+            redis_url,
+            decode_responses=True,
+            retry_on_timeout=True,
+            socket_keepalive=True
+        )
+    
         return self.redis
     
     async def connect(self):

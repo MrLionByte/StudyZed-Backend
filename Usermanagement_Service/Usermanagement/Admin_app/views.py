@@ -1,3 +1,4 @@
+import logging
 from django.shortcuts import render
 from rest_framework.permissions import AllowAny, IsAdminUser
 from AuthApp.models import UserAddon
@@ -13,15 +14,21 @@ from rest_framework.exceptions import ValidationError
 
 # Create your views here.
 
+logger = logging.getLogger(__name__)
+
 class AdminLoginView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
         serializer = AdminTokenObtainPairSerializer(data=request.data, context={'request': request})
-        print("1111",serializer)
+        if not serializer.is_valid():
+            logger.error("VALIDATION FAILED:", serializer.errors)
+            return Response(
+                {"error": str(serializer.errors), "auth-status": "failed"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         try:
-            data = serializer.is_valid()
-            print("DATA ", data, serializer.errors)
             user = UserAddon.objects.get(username=request.data.get("username"))
             admin_data_serializer = AdminSerializer(user)
             refresh = RefreshToken.for_user(user)

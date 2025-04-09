@@ -24,7 +24,7 @@ from .serializers import (
     LoginSerializer,
     UserSerializer,
 )
-from .mails import (
+from AuthApp.mails import (
     send_verification_email,
     send_forgot_password_email,
     resend_otp_verification_email,
@@ -38,9 +38,10 @@ from .utils.auth_helpers import (
 
 # Create your views here.
 
-redis_client = redis.StrictRedis(host="redis", port=6379, db=0, decode_responses=True)
+redis_client = redis.StrictRedis(
+    host=str(settings.REDIS_HOST), port=settings.REDIS_PORT, db=0, decode_responses=True
+)
 logger = logging.getLogger(__name__)
-
 
 ## USER SIGN-UP EMAIL {
 
@@ -70,19 +71,17 @@ class SignupEmailProcedureView(generics.CreateAPIView):
 
         try:
             serializer.is_valid(raise_exception=True)
-            print(serializer.is_valid())
             email = serializer.validated_data["email"]
             email_task = send_verification_email.delay(email)
-            print(email, email_task)
             result = AsyncResult(email_task.id)
-
             for _ in range(10):  # Max 10 retries
+                print("Trry :", _)
                 if result.status == "SUCCESS":
                     break
                 time.sleep(1)
-
+            
             if result.status == "PENDING":
-                # logger.info("Email verified Error at Pending")
+                logger.info("Email verified Error at Pending")
                 return Response(
                     {"error": "ERROR"},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -352,81 +351,99 @@ class SignupUserDetailsView(generics.CreateAPIView):
 
 class SignupWithGoogleAccountView(generics.CreateAPIView):
     """
-    Handles user signup and login using a Google account.
-
-    Args:
-        request (Request): The HTTP request containing Google ID and user details.
-
-    Returns:
-        Response: A response indicating whether the user was logged in or a new account was created.
+    Handles both user signup and login using a Google account.
+    If the user exists, logs them in. If not, creates a new account.
     """
-
     permission_classes = [AllowAny]
 
     def post(self, request):
-        temp_googleId = request.data["google_id"]
         try:
-            user = UserAddon.objects.filter(google_id=temp_googleId).first()
-            if user:
-                if not user.is_active:
+            google_id = request.data.get("google_id")
+            email = request.data.get("email")
+            
+            if not google_id or not email:
+                return Response(
+                    {
+                        "message": "Google ID and email are required",
+                        "auth-status": "validation-failed",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            
+            user = UserAddon.objects.filter(google_id=google_id).first()
+            
+            if not user:
+                email_exists = UserAddon.objects.filter(email=email).exists()
+                if email_exists:
                     return Response(
                         {
-                            "message": "You are blocked. For any concerns please contact admin",
-                            "auth-status": "blocked",
+                            "message": "Email already in use with a different account",
+                            "auth-status": "email-exists",
                         },
                         status=status.HTTP_400_BAD_REQUEST,
                     )
-
-                token_serializer = CustomTokenObtainPairSerializer.get_token(user)
-                access_token = str(token_serializer.access_token)  # type: ignore
-                refresh_token = str(RefreshToken.for_user(user))
-                serializer = UserSerializer(user)
-
-                return Response(
-                    {
-                        "message": "Logged in successfully",
-                        "auth-status": "success",
-                        "access_token": access_token,
-                        "refresh_token": refresh_token,
-                        "user": serializer.data,
-                        "role": user.role,
-                        "user_code": user.user_code,
-                    },
-                    status=status.HTTP_200_OK,
+                
+                role = request.data.get("role")
+                if not role:
+                    return Response(
+                        {
+                            "message": "Role is required for new accounts",
+                            "auth-status": "role-required",
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                
+                user = UserAddon.objects.create(
+                    email=email,
+                    google_id=google_id,
+                    role=role.upper(),
+                    first_name=request.data.get("first_name", ""),
+                    last_name=request.data.get("last_name", ""),
+                    username=request.data.get("username", "").lower(),
                 )
-
-            created = UserAddon.objects.create(
-                email=request.data["email"],
-                google_id=temp_googleId,
-                role=(request.data["role"]).upper(),
-                first_name=request.data["first_name"],
-                username=request.data["username"],
-            )
-            created.set_unusable_password()
-            created.save()
-
-            token_serializer = CustomTokenObtainPairSerializer.get_token(created)
+                user.set_unusable_password()
+                user.save()
+                
+                auth_status = "created"
+                message = "Account created successfully"
+            else:
+                if not user.is_active:
+                    return Response(
+                        {
+                            "message": "Your account is blocked. Please contact admin for assistance",
+                            "auth-status": "blocked",
+                        },
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+                
+                auth_status = "success"
+                message = "Logged in successfully"
+            
+            refresh = RefreshToken.for_user(user)
+            token_serializer = CustomTokenObtainPairSerializer.get_token(user)
+            
             return Response(
                 {
-                    "message": "Account created successfully",
-                    "auth-status": "created",
-                    "access_token": str(token_serializer.access_token),  # type: ignore
-                    "refresh_token": str(RefreshToken.for_user(created)),
-                    "user": UserSerializer(created).data,
-                    "role": created.role,
-                    "user_code": created.user_code,
+                    "message": message,
+                    "auth-status": auth_status,
+                    "access_token": str(token_serializer.access_token),
+                    "refresh_token": str(refresh),
+                    "user": UserSerializer(user).data,
+                    "role": user.role,
+                    "user_code": user.user_code,
                 },
                 status=status.HTTP_200_OK,
             )
-
+                
         except Exception as e:
-            print("Exception :", e)
+            print(f"Google Auth Exception: {e}")
             return Response(
                 {
-                    "message": f"Email verification failed",
+                    "message": "Authentication failed",
                     "auth-status": "failure",
+                    "error": str(e),
                 },
-                status=status.HTTP_400_BAD_REQUEST,
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
 
@@ -540,7 +557,7 @@ class LoginView(APIView):
             )
 
         except Exception as e:
-            logger.error("")
+            logger.error(f"Error Exception: {e}", exc_info=True)
             return Response(
                 {
                     "status": "error",
@@ -666,14 +683,14 @@ class ForgottenPasswordOTPView(APIView):
     def post(self, request):
         email = request.data.get("email")
         otp = request.data.get("otp")
-        
+
         if not email or not otp:
             return Response(
                 {"error": "Email and OTP are required"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         redis_temp = redis_client.hgetall(email)
-  
+
         if not redis_temp or "otp" not in redis_temp:
             return Response(
                 {"error": "OTP expired or invalid"},
@@ -688,7 +705,7 @@ class ForgottenPasswordOTPView(APIView):
 
         redis_temp["is_authenticated"] = True  # type: ignore
         redis_client.hmset(email, redis_temp)
-        
+
         return Response(
             {
                 "message": "Email verification success",

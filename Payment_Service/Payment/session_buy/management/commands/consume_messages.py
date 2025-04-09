@@ -2,6 +2,7 @@
 from django.core.management.base import BaseCommand
 from confluent_kafka import Consumer, KafkaException, KafkaError
 import json
+from django.conf import settings
 from session_buy.models import Subscription 
 import time
 import datetime
@@ -15,7 +16,7 @@ class Command(BaseCommand):
     def consume_messages(self):
         print("Starting Kafka Consumer")
         conf = {
-            'bootstrap.servers': 'kafka:9092',
+            'bootstrap.servers': str(settings.BOOTSTRAP_SERVERS),
             'group.id': 'my-consumer-group',
             'auto.offset.reset': 'earliest'
         }

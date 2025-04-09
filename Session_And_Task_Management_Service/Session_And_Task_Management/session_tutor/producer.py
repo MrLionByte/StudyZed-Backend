@@ -4,7 +4,7 @@ from django.conf import settings
 import json
 
 class KafkaProducer:
-    def __init__(self, bootstrap_servers='kafka:9092'):
+    def __init__(self, bootstrap_servers=str(settings.BOOTSTRAP_SERVERS)):
         self.producer = Producer({
             'bootstrap.servers' : bootstrap_servers
             })

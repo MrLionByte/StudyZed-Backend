@@ -11,6 +11,7 @@ class Session(models.Model):
         ONE_MONTH = 1, 'one-month'
         THREE_MONTHS = 3, 'three-months'
         SIX_MONTHS = 6, 'six-months'
+        NINE_MONTHS = 9, 'nine-months'
         TWELVE_MONTHS = 12, 'twelve-months'
     
     tutor_code = models.CharField(max_length=150)
@@ -24,13 +25,11 @@ class Session(models.Model):
     # auto_signin = models.BooleanField(default=False)
     image = models.ImageField(
         _("Session Card Picture"),
-        upload_to="uploads/session/", 
-        height_field=None, 
-        width_field=None, 
-        max_length=255,
+        upload_to="uploads/session/",
     )
     created_at = models.DateField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    start_date = models.DateTimeField(null=True, blank=True)
     
     def save(self, *args, **kwargs):
         if not self.session_code:

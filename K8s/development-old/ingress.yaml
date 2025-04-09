@@ -1,0 +1,67 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: studyzed-ingress
+  namespace: studyzed 
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/enable-websocket: "true"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    
+spec:
+  rules:
+  - host: "localhost"
+    http:
+      paths:
+      - path: /api/user-service(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: user-service
+            port:
+              number: 8005
+
+      - path: /api/sessions(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: session-and-task-service
+            port:
+              number: 8009
+      - path: /api/payments(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: payment-service
+            port:
+              number: 8008
+      - path: /api/notifications(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: notification-service
+            port:
+              number: 8007
+      - path: /api/communication(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: communication-service
+            port:
+              number: 8006
+      - path: /ws(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: communication-service
+            port:
+              number: 8006
+      - path: /grafana(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: grafana
+            port:
+              number: 3000

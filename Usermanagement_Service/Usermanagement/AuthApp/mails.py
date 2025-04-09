@@ -1,21 +1,18 @@
 # # from .utils.email_utils import send_email_template
-from .utils.email_utils import *
+from .utils.email_utils import send_email_template, send_direct_email, send_mail
 from celery import shared_task
 
 
-# # Example: Send Verification Email
-@shared_task
+@shared_task(name="AuthApp.mails.send_verification_email")
 def send_verification_email(recipient_email):
     email_data = {
         "subject": "Email Verification - Study-Zed",
         "header": "Verify Your Email Address",
         "initial_otp": "Your OTP code",
     }
-    print("  MAX  2  :", email_data)
     task = send_email_template(
         recipient=recipient_email, template_name="otp", email_data=email_data
     )
-    print("TASK :", task)
     return {
         "message": "Email verification process started",
         "task": task,

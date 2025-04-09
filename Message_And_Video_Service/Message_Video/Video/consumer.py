@@ -4,8 +4,9 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.utils import timezone
 from .models import LiveSessionGroup, User, OpenChatRoom
+from django.conf import settings
 
-redis_client = redis.StrictRedis(host='redis_service_2', port=6379, db=3, decode_responses=True)
+redis_client = redis.StrictRedis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, db=3, decode_responses=True)
 
 
 class VideoCallConsumer(AsyncWebsocketConsumer):

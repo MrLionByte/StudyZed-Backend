@@ -63,13 +63,11 @@ class TutorSessionSerializer(serializers.ModelSerializer):
     def get_days_left(self, obj):
         """Calculates the number of days left in the session."""
         if obj.updated_at and obj.session_duration:
-            # Add session_duration (in months) to updated_at
-            expiry_date = obj.updated_at + relativedelta(months=obj.session_duration)
-
-            # Convert expiry_date to date to match with datetime.now().date()
+            created_at_datetime = datetime.combine(obj.created_at, datetime.min.time())
+            expiry_date = created_at_datetime + relativedelta(months=obj.session_duration)            
             days_remaining = (expiry_date.date() - datetime.now().date()).days
 
-            return max(days_remaining, 0)  # Ensure non-negative values
+            return max(days_remaining, 0) 
         return None
 
 
@@ -86,9 +84,24 @@ class ApprovedStudentsInSessions(serializers.ModelSerializer):
 
     
 class UpdateSessionSerializer(serializers.ModelSerializer):
+    days_left = serializers.SerializerMethodField()
+    
     class Meta:
         model = Session
         fields = '__all__'
 
     def update(self, instance, validated_data):
+        if "image" in self.context["request"].FILES:
+            instance.image = self.context["request"].FILES["image"]
+            instance.save()
         return super().update(instance, validated_data)
+
+    def get_days_left(self, obj):
+        """Calculates the number of days left in the session."""
+        if obj.updated_at and obj.session_duration:
+            created_at_datetime = datetime.combine(obj.created_at, datetime.min.time())
+            expiry_date = created_at_datetime + relativedelta(months=obj.session_duration)            
+            days_remaining = (expiry_date.date() - datetime.now().date()).days
+
+            return max(days_remaining, 0) 
+        return None

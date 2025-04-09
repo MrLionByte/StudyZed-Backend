@@ -73,7 +73,22 @@ class CreateSessionView(generics.CreateAPIView):
                 auth_status=None,
                 errors=str(e)
             )
-            
+
+
+class RenewSessionSubscription(generics.UpdateAPIView):
+    serializer_class = UpdateSessionSerializer
+    permission_classes = [TutorAccessPermission]
+    
+    def get_queryset(self):
+        session_code = self.request.data.get('session_code')
+        if not session_code:
+            raise ValidationError("session_code is required.")
+
+        try:
+            return Session.objects.filter(session_code=session_code)
+        except Exception as e:
+            print("VIEW ERROR:", e)
+            raise ValidationError("An error occurred while fetching sessions.")
             
 class GetSessionView(generics.RetrieveAPIView):
     serializer_class = CreateSessionSerializers
@@ -173,13 +188,12 @@ class UpdateSessionViews(generics.UpdateAPIView):
     
     def get_object(self):
         try:
-            session_code = self.request.data
-            print(session_code)
+            session_code = self.request.query_params.get("session_code")
             session = Session.objects.get(session_code=session_code)
             return session
         except Session.DoesNotExist:
             raise NotFound("Session not found.")
-
+    
     def patch(self, request):
         session_to_be_updated = self.get_object()
         print("session to be updated:", session_to_be_updated)
@@ -187,8 +201,22 @@ class UpdateSessionViews(generics.UpdateAPIView):
             session_to_be_updated, data=request.data, partial=True
         )
         if serializer.is_valid():
+            if 'image' in request.FILES:
+                session_to_be_updated.image = request.FILES['image']
+                session_to_be_updated.save()
+                
             serializer.save()
-            print("Update Successful")
             return Response(serializer.data, status=200)
-        print("Validation Errors:", serializer.errors)
         return Response(serializer.errors, status=400)
+    
+    def get(self, request, *args, **kwargs):
+        session_code = request.query_params.get("session_code")
+        if not session_code:
+            return Response({"error": "session_code is required"}, status=400)
+
+        try:
+            session = Session.objects.get(session_code=session_code)
+            serializer = self.get_serializer(session)
+            return Response(serializer.data, status=200)
+        except Session.DoesNotExist:
+            return Response({"error": "Session not found"}, status=404)

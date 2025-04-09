@@ -11,7 +11,7 @@ from .serializers import LiveSessionOneToOneSerializer, LiveSessionGroupSerializ
 from Chat.jwt_decode import decode_jwt_token
 from mongoengine.queryset.visitor import Q
 from mongoengine.errors import DoesNotExist
-
+from rest_framework.views import APIView
 
 # Create your views here.
 
@@ -261,3 +261,19 @@ class ChangeStatusOfMeet(views.APIView):
             return Response({
                 'error': 'Something went wrong'}, 
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+class VideoMeetStatsView(APIView):
+    """
+    API view to get count of video meetings from MongoDB
+    """
+    def get(self, request):
+        try:
+            total_meetings = LiveSessionGroup.objects().count()
+            return Response({
+                'total_meetings': total_meetings
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            print("Error in VideoMeetStatsView:", str(e))
+            return Response({
+                'total_meetings': "Error occurred in server"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

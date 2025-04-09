@@ -13,7 +13,7 @@ class UserFCMToken(Document):
 class Notification(Document):
     title = StringField(required=True, max_length=255)
     message = StringField()
-    user_code = StringField() # To whom the notification for
+    user_code = StringField()
     type = StringField(required=True, choices=["message", "alert", "reminder", "other"], default="other")
     
     is_read = BooleanField(default=False)

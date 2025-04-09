@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: communication-service
+  namespace: studyzed
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: communication-service
+  template:
+    metadata:
+      labels:
+        app: communication-service
+    spec:
+      containers:
+      - name: communication-service
+        image: mrlionbyte/messages-management:v1.4.3.9
+        ports:
+          - containerPort: 8006
+        envFrom:
+          - secretRef:
+              name: communication-service-secrets
+        env:
+        - name: REDIS_HOST
+          value: "redis-service"
+        - name: REDIS_PORT
+          value: "6379"
+        - name: DJANGO_SETTINGS_MODULE
+          value: "Message_Video.settings"
+        command: ["daphne", "-b", "0.0.0.0", "-p", "8006", "Message_Video.asgi:application"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: communication-service
+  namespace: studyzed
+spec:
+  selector:
+    app: communication-service
+  ports:
+  - protocol: TCP
+    port: 8006
+    targetPort: 8006
+  type: ClusterIP

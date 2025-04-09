@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: studyzed
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-service
+  template:
+    metadata:
+      labels:
+        app: notification-service
+    spec:
+      dnsPolicy: "None"  # Disable internal DNS policy
+      dnsConfig:
+        nameservers:
+          - 8.8.8.8  # Use Google's public DNS
+          - 8.8.4.4  # Use Google's public DNS
+      containers:
+      - name: notification-service
+        image: mrlionbyte/notification-management:v1.4.1.4
+        ports:
+          - containerPort: 8007
+        envFrom:
+          - secretRef:
+              name: notification-service-secrets
+        env:
+        - name: REDIS_HOST
+          value: "redis-service"
+        - name: DJANGO_SETTINGS_MODULE
+          value: "Notification.settings"
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          value: "kafka:9092"
+
+        resources:
+          limits:
+            memory: "1Gi"
+            cpu: "300m"
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: studyzed
+spec:
+  selector:
+    app: notification-service
+  ports:
+  - protocol: TCP
+    port: 8007
+    targetPort: 8007
+  type: ClusterIP

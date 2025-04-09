@@ -1,0 +1,565 @@
+# User Database
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: user-db
+  namespace: studyzed
+spec:
+  serviceName: "user-db"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-db
+  template:
+    metadata:
+      labels:
+        app: user-db
+    spec:
+      containers:
+        - name: user-db
+          image: postgres:16
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: "usermanagement_studyzed"
+            - name: POSTGRES_USER
+              value: "fmn"
+            - name: POSTGRES_PASSWORD
+              value: "mrlionbyte"
+            - name: PGDATA
+              value: "/var/lib/postgresql/data/pgdata"
+          volumeMounts:
+            - name: user-db-data
+              mountPath: /var/lib/postgresql/data
+          
+  volumeClaimTemplates:
+    - metadata:
+        name: user-db-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-db
+  namespace: studyzed
+spec:
+  ports:
+    - port: 5432
+      targetPort: 5432
+  selector:
+    app: user-db
+  clusterIP: None
+---
+
+# Session and Task Database
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: session-task-db
+  namespace: studyzed
+spec:
+  serviceName: "session-task-db"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: session-task-db
+  template:
+    metadata:
+      labels:
+        app: session-task-db
+    spec:
+      containers:
+        - name: session-task-db
+          image: postgres:16
+          ports:
+            - containerPort: 5432
+          env:
+            - name: PGPORT
+              value: "5432"
+            - name: POSTGRES_DB
+              value: "session_task_management_studyzed"
+            - name: POSTGRES_USER
+              value: "fmn"
+            - name: POSTGRES_PASSWORD
+              value: "mrlionbyte"
+            - name: PGDATA
+              value: "/var/lib/postgresql/data/pgdata"
+          volumeMounts:
+            - name: session-task-db-data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: session-task-db-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: session-task-db
+  namespace: studyzed
+spec:
+  ports:
+    - port: 5436
+      targetPort: 5432
+  selector:
+    app: session-task-db
+  clusterIP: None
+---
+
+# Payment Database
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: payment-db
+  namespace: studyzed
+spec:
+  serviceName: "payment-db"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payment-db
+  template:
+    metadata:
+      labels:
+        app: payment-db
+    spec:
+      containers:
+        - name: payment-db
+          image: postgres:16
+          ports:
+            - containerPort: 5432
+          env:
+            - name: PGPORT
+              value: "5432"
+            - name: POSTGRES_DB
+              value: "payment_studyzed"
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: payment-service-secrets
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: payment-service-secrets
+                  key: POSTGRES_PASSWORD
+            - name: PGDATA
+              value: "/var/lib/postgresql/data/pgdata"
+          volumeMounts:
+            - name: payment-db-data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: payment-db-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-db
+  namespace: studyzed
+spec:
+  ports:
+    - port: 5437
+      targetPort: 5432
+  selector:
+    app: payment-db
+  clusterIP: None
+---
+
+# Redis for User Management
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis
+  namespace: studyzed
+spec:
+  serviceName: "redis"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7
+        ports:
+        - containerPort: 6379
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+  volumeClaimTemplates:
+  - metadata:
+      name: redis-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+  namespace: studyzed
+spec:
+  ports:
+  - port: 6379
+    targetPort: 6379
+  selector:
+    app: redis
+  clusterIP: None
+  # type: ClusterIP
+---
+
+# Zookeeper
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: zookeeper
+  namespace: studyzed
+spec:
+  serviceName: "zookeeper"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zookeeper
+  template:
+    metadata:
+      labels:
+        app: zookeeper
+    spec:
+      securityContext:
+        fsGroup: 1001
+      containers:
+      - name: zookeeper
+        image: bitnami/zookeeper:3.9
+        securityContext:
+          runAsUser: 1001
+        ports:
+        - containerPort: 2181
+        env:
+        - name: ALLOW_ANONYMOUS_LOGIN
+          value: "yes"
+        - name: ZOO_LOG4J_PROP
+          value: "log4j.rootLogger=OFF, stdout"
+        volumeMounts:
+        - name: zookeeper-data
+          mountPath: /bitnami/zookeeper
+  volumeClaimTemplates:
+  - metadata:
+      name: zookeeper-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zookeeper
+  namespace: studyzed
+spec:
+  ports:
+  - port: 2181
+    targetPort: 2181
+  selector:
+    app: zookeeper
+  clusterIP: None
+---
+
+# Kafka
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kafka
+  namespace: studyzed
+spec:
+  serviceName: "kafka"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka
+  template:
+    metadata:
+      labels:
+        app: kafka
+    spec:
+      securityContext:
+        fsGroup: 1001
+      initContainers:  # ✅ Moved outside of 'containers' section
+      - name: volume-permissions
+        image: busybox
+        command: ["sh", "-c", "chown -R 1001:1001 /bitnami/kafka"]
+        securityContext:
+          runAsUser: 0
+        volumeMounts:
+        - name: kafka-data
+          mountPath: /bitnami/kafka
+      containers:
+      - name: kafka
+        image: bitnami/kafka:3.9
+        securityContext:
+          runAsUser: 1001
+        ports:
+        - containerPort: 9092
+        env:
+        - name: KAFKA_BROKER_ID
+          value: "1"
+        - name: KAFKA_LISTENERS
+          value: "PLAINTEXT://:9092"
+        - name: KAFKA_ADVERTISED_LISTENERS
+          value: "PLAINTEXT://kafka-0.kafka.studyzed.svc.cluster.local:9092"
+        - name: KAFKA_ZOOKEEPER_CONNECT
+          value: zookeeper:2181
+        - name: ALLOW_PLAINTEXT_LISTENER
+          value: "yes"
+        - name: KAFKA_LOG4J_OPTS
+          value: "-Dlog4j.rootLogger=OFF"
+        volumeMounts:
+        - name: kafka-data
+          mountPath: /bitnami/kafka
+  volumeClaimTemplates:
+  - metadata:
+      name: kafka-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka
+  namespace: studyzed
+spec:
+  ports:
+  - port: 9092
+    targetPort: 9092
+  selector:
+    app: kafka
+  clusterIP: None
+
+---
+
+# Grafana
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: grafana
+  namespace: studyzed
+spec:
+  serviceName: "grafana"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      securityContext:
+        fsGroup: 472 
+      containers:
+      - name: grafana
+        image: grafana/grafana:10.0.0
+        ports:
+        - containerPort: 3000
+        env:
+        - name: GF_SECURITY_ADMIN_PASSWORD
+          value: "admin"
+        securityContext:
+          runAsUser: 472 
+        volumeMounts:
+        - name: grafana-data
+          mountPath: /var/lib/grafana
+        
+  volumeClaimTemplates:
+  - metadata:
+      name: grafana-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: studyzed
+spec:
+  selector:
+    app: grafana
+  ports:
+  - port: 3000
+    targetPort: 3000
+
+  type: LoadBalancer
+
+
+
+
+
+
+
+# # Kafka & Zookeeper
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: zookeeper-pvc
+#   namespace: studyzed
+# spec:
+#   accessModes:
+#     - ReadWriteOnce
+#   resources:
+#     requests:
+#       storage: 1Gi
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: zookeeper
+#   namespace: studyzed
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: zookeeper
+#   template:
+#     metadata:
+#       labels:
+#         app: zookeeper
+#     spec:
+#       containers:
+#       - name: zookeeper
+#         image: bitnami/zookeeper:3.9
+#         ports:
+#         - containerPort: 2181
+#         env:
+#         - name: ALLOW_ANONYMOUS_LOGIN
+#           value: "yes"
+#         - name: ZOO_LOG4J_PROP
+#           value: "log4j.rootLogger=OFF, stdout"
+#         volumeMounts:
+#         - name: zookeeper-data
+#           mountPath: /bitnami/zookeeper
+#         resources:
+#           limits:
+#             memory: "128Mi"
+#             cpu: "250m"
+#           requests:
+#             memory: "64Mi"
+#             cpu: "100m"
+#       volumes:
+#       - name: zookeeper-data
+#         persistentVolumeClaim:
+#           claimName: zookeeper-pvc
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: zookeeper
+#   namespace: studyzed
+# spec:
+#   ports:
+#   - port: 2181
+#     targetPort: 2181
+#   selector:
+#     app: zookeeper
+#   type: ClusterIP
+# ---
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: kafka-pvc
+#   namespace: studyzed
+# spec:
+#   accessModes:
+#     - ReadWriteOnce
+#   resources:
+#     requests:
+#       storage: 1Gi
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: kafka
+#   namespace: studyzed
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: kafka
+#   template:
+#     metadata:
+#       labels:
+#         app: kafka
+#     spec:
+#       containers:
+#       - name: kafka
+#         image: bitnami/kafka:3.9
+#         ports:
+#         - containerPort: 9092
+#         env:
+#         - name: KAFKA_BROKER_ID
+#           value: "1"
+#         - name: KAFKA_CFG_ZOOKEEPER_CONNECT
+#           value: "zookeeper:2181"
+#         - name: KAFKA_CFG_LISTENERS
+#           value: "PLAINTEXT://:9092"
+#         - name: KAFKA_CFG_ADVERTISED_LISTENERS
+#           value: "PLAINTEXT://kafka:9092"
+#         - name: ALLOW_PLAINTEXT_LISTENER
+#           value: "yes"
+#         - name: KAFKA_LOG4J_OPTS
+#           value: "-Dlog4j.rootLogger=INFO"
+#         - name: KAFKA_HEAP_OPTS  # Add heap options
+#           value: "-Xmx512m -Xms256m"
+#         - name: KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP
+#           value: "PLAINTEXT:PLAINTEXT"
+#         - name: BITNAMI_DEBUG  # Enable debug mode to get more information
+#           value: "true"
+#         volumeMounts:
+#         - name: kafka-data
+#           mountPath: /bitnami/kafka
+#         resources:
+#           limits:
+#             memory: "1Gi"
+#             cpu: "500m"
+#           requests:
+#             memory: "512Mi"
+#             cpu: "250m"
+#       # volumes:
+#       # - name: kafka-data
+#       #   persistentVolumeClaim:
+#       #     claimName: kafka-pvc
+
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: kafka
+#   namespace: studyzed
+# spec:
+#   ports:
+#   - port: 9092
+#     targetPort: 9092
+#   selector:
+#     app: kafka
+#   type: ClusterIP
+# ---

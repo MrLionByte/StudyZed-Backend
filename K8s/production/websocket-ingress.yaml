@@ -1,0 +1,29 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: studyzed-ws-ingress
+  namespace: studyzed 
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /ws/$2
+    nginx.ingress.kubernetes.io/enable-websocket: "true"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+      - study-zed-api.farhanmn.site
+      secretName: studyzed-tls
+  rules:
+  - host: study-zed-api.farhanmn.site
+    http:
+      paths:
+      - path: /ws(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: communication-service
+            port:
+              number: 8006

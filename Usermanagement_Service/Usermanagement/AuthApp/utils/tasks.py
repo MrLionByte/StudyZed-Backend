@@ -1,9 +1,13 @@
 import redis
 import random
 import string
+
+from django.conf import settings
 from datetime import datetime, timedelta
 
-redis_client = redis.StrictRedis(host="redis", port=6379, db=0, decode_responses=True)
+redis_client = redis.StrictRedis(
+    host=str(settings.REDIS_HOST), port=settings.REDIS_PORT, db=0, decode_responses=True
+)
 
 
 def generate_otp(email, length=6):
@@ -21,7 +25,7 @@ def generate_otp(email, length=6):
                 "expires_at": expires_at.isoformat(),
             },
         )
-    
+
     else:
         redis_client.hmset(
             key,

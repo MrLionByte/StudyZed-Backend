@@ -30,10 +30,10 @@ load_dotenv(dotenv_path=env_path)
 SECRET_KEY = os.getenv("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DEBUG")
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "https://7a15-202-164-149-48.ngrok-free.app"]
-
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
+ALLOWED_HOSTS += [os.getenv("HOST_IP", "")]
 
 # Application definition
 INSTALLED_APPS = [
@@ -56,12 +56,12 @@ INSTALLED_APPS = [
     # 'mjml'
     "cloudinary",
     "celery",
-    "silk",
+    # "silk",
 ]
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
-    "silk.middleware.SilkyMiddleware",
+    # "silk.middleware.SilkyMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -74,7 +74,7 @@ MIDDLEWARE = [
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://redis:6379/1",
+        "LOCATION": os.getenv("LOCATION"),
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         },
@@ -92,12 +92,7 @@ CELERY_TIMEZONE = "UTC"
 
 
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = [
-    os.getenv("ALLOWED_ORIGINS_1"),
-    os.getenv("ALLOWED_ORIGINS_2"),
-    os.getenv("ALLOWED_ORIGINS_3"),
-]
-
+CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
 
 ROOT_URLCONF = "Usermanagement.urls"
 
@@ -127,8 +122,8 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql_psycopg2",
         "NAME": os.getenv("DB_NAME"),
-        "USER": os.getenv("DB_USER"),
-        "PASSWORD": os.getenv("DB_PASSWORD"),
+        "USER": os.getenv("POSTGRES_USER"),
+        "PASSWORD": os.getenv("POSTGRES_PASSWORD"),
         "HOST": os.getenv("DB_HOST"),
         "PORT": os.getenv("DB_PORT"),
     }
@@ -231,7 +226,6 @@ LOGGING = {
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
-            "formatter": "verbose",
         },
         "file": {
             "class": "logging.FileHandler",
@@ -247,3 +241,9 @@ LOGGING = {
 
 
 os.makedirs(os.path.join(BASE_DIR, "logs"), exist_ok=True)
+
+BOOTSTRAP_SERVERS = os.getenv("BOOTSTRAP_SERVERS")
+REDIS_HOST = os.getenv("REDIS_HOST")
+REDIS_PORT = os.getenv("REDIS_PORT")
+
+APPEND_SLASH = False

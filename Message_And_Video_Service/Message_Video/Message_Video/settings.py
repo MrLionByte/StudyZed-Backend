@@ -29,14 +29,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ["SECRET_KEY"]
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DEBUG")
 
-ALLOWED_HOSTS = [
-    os.environ["ALLOWED_HOSTS_1"],
-    os.environ["ALLOWED_HOSTS_2"],
-    os.environ["ALLOWED_HOSTS_3"],
-]
-
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
 
 # Application definition
 
@@ -67,13 +62,7 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = [
-    os.environ["CORS_ALLOWED_ORIGINS_1"],
-    os.environ["CORS_ALLOWED_ORIGINS_2"],
-    os.environ["CORS_ALLOWED_ORIGINS_3"],
-]
-
-print( os.environ["CORS_ALLOWED_ORIGINS_1"],os.environ["CORS_ALLOWED_ORIGINS_2"],os.environ["CORS_ALLOWED_ORIGINS_3"],)
+CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
 
 CORS_ALLOW_METHODS = [
     "GET",
@@ -117,10 +106,11 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [(os.environ["REDIS"], os.environ["REDIS_PORT"])],
+            "hosts": [("redis-service", 6379)],
         },
     }
 }
+
 
 DATABASES = {
     "default": {
@@ -187,4 +177,8 @@ WEBRTC_ICE_SERVERS = [
     # }
 ]
 
+BOOTSTRAP_SERVERS = os.environ['BOOTSTRAP_SERVERS']
+
 # To Run daphne -b 0.0.0.0 -p 8000 Message_Video.asgi:application
+REDIS_HOST=os.getenv("REDIS_HOST", "redis-service")
+REDIS_PORT=os.getenv("REDIS_PORT", "6379")
