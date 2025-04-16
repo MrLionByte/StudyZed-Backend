@@ -1,7 +1,7 @@
 FROM python:3.10-slim
 
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
 ENV DJANGO_SETTINGS_MODULE=Notification.settings 
 
@@ -13,7 +13,6 @@ RUN chmod +x /app/run.py && \
     pip install --no-cache-dir -r requirements.txt && \
     mkdir -p /celery-worker && \
     chmod -R 777 /celery-worker
-
 
 COPY . /app
 

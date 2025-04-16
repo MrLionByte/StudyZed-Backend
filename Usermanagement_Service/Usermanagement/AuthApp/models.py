@@ -10,8 +10,8 @@ import uuid
 class Email_temporary(models.Model):
     email = models.EmailField(unique=True)
     otp = models.CharField(
-        max_length=6, validators=[RegexValidator(r"^\d{6}$")], default=000000
-    )
+        max_length=6, validators=[RegexValidator(r"^\d{6}$")]
+        )
     no_of_try = models.IntegerField(default=0)
     is_authenticated = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

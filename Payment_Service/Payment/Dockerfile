@@ -1,4 +1,4 @@
-FROM python:3.11-slim-bullseye
+FROM python:3.12-slim-bookworm
 
 RUN pip install --no-cache-dir --upgrade pip
 
@@ -16,5 +16,4 @@ COPY . /app
 
 EXPOSE 8000
 
-# CMD ["python", "/app/run.py"]
 CMD ["bash", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:8008 & python manage.py consume_messages"]

@@ -3,7 +3,6 @@ import logging
 from django.utils import timezone
 from zoneinfo import ZoneInfo
 from rest_framework.response import Response
-
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
@@ -62,3 +61,4 @@ def reset_login_count(email):
         redis_client.delete(key)
     except redis.exceptions.RedisError as e:
         raise RuntimeError(f"Failed to reset login count: {e}")
+

@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: session-task-db
+  namespace: studyzed
+spec:
+  serviceName: "session-task-db"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: session-task-db
+  template:
+    metadata:
+      labels:
+        app: session-task-db
+    spec:
+      containers:
+        - name: session-task-db
+          image: postgres:16
+          ports:
+            - containerPort: 5432
+          env:
+            - name: PGPORT
+              value: "5432"
+            - name: POSTGRES_DB
+              value: "session_task_management_studyzed"
+            - name: POSTGRES_USER
+              value: "fmn"
+            - name: POSTGRES_PASSWORD
+              value: "mrlionbyte"
+            - name: PGDATA
+              value: "/var/lib/postgresql/data/pgdata"
+          volumeMounts:
+            - name: session-task-db-data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: session-task-db-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: session-task-db
+  namespace: studyzed
+spec:
+  ports:
+    - port: 5436
+      targetPort: 5432
+  selector:
+    app: session-task-db
+  clusterIP: None

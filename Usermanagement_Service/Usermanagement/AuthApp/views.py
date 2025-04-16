@@ -35,6 +35,7 @@ from .utils.auth_helpers import (
     check_login_count,
     reset_login_count,
 )
+from .utils.responses import api_response
 
 # Create your views here.
 
@@ -61,50 +62,84 @@ class SignupEmailProcedureView(generics.CreateAPIView):
     serializer_class = EmailVerificationSerializer
 
     def post(self, request, *args, **kwargs):
-        temp_mail = request.data["email"]
-        temp_data = Email_temporary.objects.filter(email=temp_mail).first()
-        if temp_data:
-            temp_data.delete()
-            logger.info("Email already in use, deleted old record")
-
-        serializer = self.get_serializer(data=request.data)
-
         try:
+            temp_mail = request.data["email"]
+            temp_data = Email_temporary.objects.filter(email=temp_mail).first()
+            if temp_data:
+                temp_data.delete()
+                logger.info("Email already in use, deleted old record")
+
+            serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
-            email = serializer.validated_data["email"]
-            email_task = send_verification_email.delay(email)
-            result = AsyncResult(email_task.id)
-            for _ in range(10):  # Max 10 retries
-                print("Trry :", _)
-                if result.status == "SUCCESS":
-                    break
-                time.sleep(1)
             
-            if result.status == "PENDING":
-                logger.info("Email verified Error at Pending")
+            email = serializer.validated_data["email"]
+            
+            retry_count = 0
+            max_retries = 3
+            email_task = None
+            
+            while retry_count < max_retries:
+                try:
+                    email_task = send_verification_email.apply_async(args=[email])
+                    logger.info(f"Task registration successful on attempt {retry_count+1}")
+                    break
+                except Exception as e:
+                    retry_count += 1
+                    if retry_count >= max_retries:
+                        return Response(
+                            {"error": "Service unavailable - task registration failed"},
+                            status=status.HTTP_503_SERVICE_UNAVAILABLE
+                        )
+                    time.sleep(1)
+            
+            if email_task:
+                result = AsyncResult(email_task.id)
+                success = False
+                
+                for attempt in range(10):  # Max 10 retries
+                    logger.info(f"Waiting for task completion, attempt {attempt+1}")
+                    if result.status == "SUCCESS":
+                        success = True
+                        break
+                    time.sleep(1)
+            
+                if not success:
+                    logger.error("Task execution timed out or failed")
+                    return Response(
+                        {"error": "Task execution timed out"},
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    )
+
+                try:
+                    data = result.get(timeout=3)
+                    expires_at = timezone.make_aware(
+                    data["task"]["expires_at"], timezone=ZoneInfo("UTC")
+                    )
+
+                    Email_temporary.objects.create(
+                        email=email, otp=data["task"]["otp"], expires_at=expires_at
+                    )
+
+                    logger.info("Email verified successfully")
+
+                    return Response(
+                        {
+                            "message": "Email verification success",
+                            "auth-status": "success",
+                        },
+                        status=status.HTTP_200_OK,
+                    )
+                except Exception as e:
+                    logger.error(f"Error processing task result: {str(e)}", exc_info=True)
+                    return Response(
+                        {"error": "Failed to process task result"},
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    )
+            else:
                 return Response(
-                    {"error": "ERROR"},
+                    {"error": "Failed to create task"},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
-            data = result.get()
-            expires_at = timezone.make_aware(
-                data["task"]["expires_at"], timezone=ZoneInfo("UTC")
-            )
-
-            Email_temporary.objects.create(
-                email=email, otp=data["task"]["otp"], expires_at=expires_at
-            )
-
-            logger.info("Email verified successfully")
-
-            return Response(
-                {
-                    "message": "Email verification success",
-                    "auth-status": "success",
-                },
-                status=status.HTTP_200_OK,
-            )
-
         except ValueError as e:
             logger.error("Error ValueError: %s", e, exc_info=True)
             return Response(
@@ -234,7 +269,9 @@ class SignupOTPResendView(generics.CreateAPIView):
         try:
             email = temp_mail
             print("SER EMAIl :", email)
-            email_task = resend_otp_verification_email.delay(email)
+            # email_task = resend_otp_verification_email.delay(email)
+            email_task = resend_otp_verification_email.apply_async(args=[email])
+            
             result = AsyncResult(email_task.id)
             print("RESULT :", result.get(), "  :::: ", result.result)
             if result.status == "PENDING":

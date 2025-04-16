@@ -1,5 +1,5 @@
 ingress:
-  enabled: false  # you're managing ingress yourself
+  enabled: false
 
 grafana:
   grafana.ini:

@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: user-service
-        image: mrlionbyte/user-management:v1.4.4.4
+        image: mrlionbyte/user-management:v1.4.5.8
         ports:
           - containerPort: 8005
         envFrom:

@@ -3,6 +3,7 @@ promtail:
     clients:
       - url: http://loki:3100/loki/api/v1/push
     scrape_configs:
+
       - job_name: user-service-logs
         kubernetes_sd_configs:
           - role: pod
@@ -20,3 +21,22 @@ promtail:
           - source_labels: [__path__]
             target_label: __path__
             replacement: /app/logs/app.log
+
+      - job_name: grafana-logs
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - studyzed
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            target_label: app
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
+          - action: keep
+            regex: grafana-.*
+            source_labels: [__meta_kubernetes_pod_name]
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+        pipeline_stages:
+          - docker: {} 
