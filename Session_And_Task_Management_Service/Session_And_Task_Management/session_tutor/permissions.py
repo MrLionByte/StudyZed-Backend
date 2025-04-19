@@ -1,10 +1,13 @@
 from rest_framework import permissions, validators, status
 import jwt
+import logging
 from jwt import exceptions
 from rest_framework.exceptions import AuthenticationFailed,PermissionDenied, NotFound
 from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
 from rest_framework.response import Response
 from django.conf import settings
+
+logger = logging.getLogger(__name__)
 
 class TutorAccessPermission(permissions.BasePermission):
     message = 'Permission denied.'
@@ -16,23 +19,19 @@ class TutorAccessPermission(permissions.BasePermission):
         try:
             decoded_payload = jwt.decode(token, secret_key, algorithms=["HS256"])
             if decoded_payload.get("role") == "TUTOR":
-                print("TUTOR")
                 return True
             else:
-                print("NOT TUTOR")
+                logger.error("Permission denied, not a tutor.")
                 raise AuthenticationFailed("Permission denied, not a tutor.")
         
         except jwt.ExpiredSignatureError:
-           
-            print("Error XZ: Signature has expired")
+            logger.error("Token has expired.")
             raise AuthenticationFailed("Token has expired.")
         
         except jwt.InvalidTokenError:
-            
-            print("Error XX: Invalid token")
+            logger.error("Invalid token.")
             raise AuthenticationFailed("Invalid token.")
         
         except Exception as e:
-            
-            print("Error XY:", e)
+            logger.error(f"Token decoding failed: {str(e)}")
             raise AuthenticationFailed("Authentication failed.")

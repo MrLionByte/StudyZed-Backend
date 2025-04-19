@@ -17,19 +17,21 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from .health_check import health_check_action
+from .metrics import metrics_view
 from AuthApp import urls
 from UserApp import urls
 from Admin_app import urls
 
+
 urlpatterns = [
     path('admin/', admin.site.urls),
-    
-    # path('silk/', include('silk.urls', namespace='silk')),
     
     path('auth-app/', include('AuthApp.urls')),
     path('user-app/', include('UserApp.urls')),
     path('class-app/', include('Class_app.urls')),
     path('admin-app/', include('Admin_app.urls')),
     path("healthz/", health_check_action, name="healthz"),
-
+    path("metrics/", metrics_view, name="prometheus-metrics"),
+    
+    # path('silk/', include('silk.urls', namespace='silk')),
 ]

@@ -1,3 +1,4 @@
+import logging
 from django.shortcuts import render
 from rest_framework import generics, exceptions, status
 from rest_framework.response import Response
@@ -15,6 +16,8 @@ from assessment_tutor_side.models import Assessments
 # Create your views here.
 
 
+logger = logging.getLogger(__name__)
+
 class AllSessionToApproveView(generics.ListAPIView):
     queryset = Session.objects.filter(is_active=False)
     serializer_class = SeeSessionToApproveSerializers
@@ -26,11 +29,9 @@ class ApproveSessionView(generics.UpdateAPIView):
 
     def update(self, request, *args, **kwargs):
         session = self.get_object()
-        print("GET OBJ :", session, session.is_active)
         session.is_active = True
         session.start_date = now() + relativedelta(days=+1)
         session.save()
-        print(session.is_active)
         return Response(
             {
                 "message": f"Successfully approved session {session.session_name}",
@@ -54,7 +55,6 @@ class BlockASessionView(generics.UpdateAPIView):
 
     def update(self, request, *args, **kwargs):
         session = self.get_object()
-        print("GET OBJ :", session, session.is_active)
         session.is_active = False
         session.save()
         return Response(

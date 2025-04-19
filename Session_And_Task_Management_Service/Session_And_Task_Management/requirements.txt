@@ -43,3 +43,7 @@ s3transfer==0.11.4
 Pillow==11.1.0
 olefile==0.47
 gunicorn==23.0.0
+django-structlog==9.1.1
+python-json-logger==3.3.0
+prometheus-client==0.21.1
+structlog==25.2.0

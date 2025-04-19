@@ -1,7 +1,10 @@
 import jwt
+import logging
 from django.conf import settings
 from rest_framework import status
 from rest_framework.response import Response
+
+logger = logging.getLogger(__name__)
 
 def decode_jwt_token(request):
     try:
@@ -17,9 +20,9 @@ def decode_jwt_token(request):
         return jwt_data
 
     except jwt.ExpiredSignatureError as e:
-        print("SIGNATURE ERROR :",e)
+        logger.error("Token has expired.")
         return Response({"error": "Token has expired"}, status=status.HTTP_401_UNAUTHORIZED)
 
     except Exception as e:
-        print(e)
+        logger.error(f"Token decoding failed: {str(e)}")
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST) 

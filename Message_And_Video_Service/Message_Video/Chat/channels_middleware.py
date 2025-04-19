@@ -6,6 +6,9 @@ from django.core.exceptions import PermissionDenied
 from .authentication import JWTAuthentication
 from django.utils.functional import SimpleLazyObject
 from .user_management import get_or_create_user
+import logging
+
+logger = logging.getLogger(__name__)
 
 class JWTForWebsocketMiddleware(BaseMiddleware):
     async def __call__(self, scope, receive=None, send=None):
@@ -25,11 +28,13 @@ class JWTForWebsocketMiddleware(BaseMiddleware):
         try:
             user_data = await authentication.authenticate_websocket(token)
             if not user_data:
+                logger.error("User data not found in token.")
                 await self.close_connection(send, 4001)
                 return
             
             user = await get_or_create_user(user_data)
             if not user:
+                logger.error("User not found or created.")
                 await self.close_connection(self, send, 4002)
                 return
             # scope["user"] = SimpleLazyObject(lambda: user)
@@ -37,14 +42,14 @@ class JWTForWebsocketMiddleware(BaseMiddleware):
             return await super().__call__(scope, receive, send)
 
         except (PermissionDenied, AuthenticationFailed):
-            print("ERROR in JWT MIDDLEWARE")
+            
             await send({
                 "type": "websocket.close",
                 "code": 4002
             })
 
         except Exception as e:
-            print("ERROR as Exception :", e)
+            logger.error(f"Unexpected error: {str(e)}")
             await self.close_connection(send, 4004)
     
     async def close_connection(self, send, code, dummy=None):

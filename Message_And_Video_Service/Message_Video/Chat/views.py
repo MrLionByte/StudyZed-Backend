@@ -1,3 +1,4 @@
+import logging
 from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework import status, views
@@ -11,12 +12,13 @@ from datetime import datetime
 
 # Create your views here.
 
+logger = logging.getLogger(__name__)
+
 @api_view(['GET'])
 def get_chatted_user(request, user_code):
-    print("WORKING WELL                 >>>>>>>>>>>", user_code)
     current_user = User.objects(user_code=user_code).first()
     if current_user:
-        print(current_user)
+        logger.info(f"User found: {current_user.user_code}")
     else:
     # current_user = User.objects.get(user_code=user_code).exist()
     
@@ -77,14 +79,14 @@ def get_chatted_user(request, user_code):
         }, status=status.HTTP_200_OK)
         
     except User.DoesNotExist:
-        print("Error user not exsist")
+        logger.error(f"User with code {user_code} not found")
         return Response(
             {'error': 'User not found'},
             status=status.HTTP_404_NOT_FOUND
         )
         
     except Exception as e:
-        print("ERROROROROR ::", e)
+        logger.error(f"Error fetching chatted users: {str(e)}")
         return Response(
             {'error': str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -124,7 +126,6 @@ def get_chat_history(request, user_code, selected_user_code):
 class MessageFromTheHomePage(views.APIView):
     def post(self, request, *args, **kwargs):
         data = request.data
-        print(data)
         return Response({
             'message': 'successfully sent message'
             }, status=status.HTTP_202_ACCEPTED)

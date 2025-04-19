@@ -9,9 +9,12 @@ from assessment_student_side.models import StudentAssessment, StudentAssessmentR
 from django.db import transaction
 from django.db.models import F
 from decimal import Decimal, DecimalException
+from django.core.exceptions import PermissionDenied
 
 # Create your views here.
 
+import logging
+logger = logging.getLogger(__name__)
 
 class CreateAssessmentView(generics.CreateAPIView):
     queryset = Assessments.objects.all()
@@ -29,6 +32,9 @@ class GetAssessmentView(generics.ListAPIView):
     def get_queryset(self):
         session_code = self.request.GET.get('session_code', '')
         session_key = Session.objects.get(session_code=session_code)
+        if not session_key.is_active:
+            logger.error(f"Session with code {session_code} is not active")
+            raise PermissionDenied('Session is not active')
         return Assessments.objects.filter(session_key=session_key)
     
 
@@ -48,6 +54,7 @@ class AttendedStudentsAndMark(generics.ListAPIView):
         try:
             assessment = Assessments.objects.get(id=assessment_id)
         except Assessments.DoesNotExist:
+            logger.error(f"Assessment with ID {assessment_id} not found")
             return StudentAssessment.objects.none()
         
         return StudentAssessment.objects.filter(assessment=assessment)
@@ -83,11 +90,12 @@ class UpdateMarkForAssessmentView(APIView):
                         student_response.student_assessment.save()
                 
                 except StudentAssessmentResponse.DoesNotExist:
+                    logger.error(f"Response with ID {id} not found")
                     return Response({
                         'error': f'Response with ID {id} not found'
                     }, status=status.HTTP_404_NOT_FOUND)
                 except Exception as e:
-                    print("Exception :",e)
+                    logger.error(f"Error updating mark for response ID {id}: {str(e)}")
                     return Response({
                         'error': str(e)
                     }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -95,6 +103,7 @@ class UpdateMarkForAssessmentView(APIView):
                 return Response(status=status.HTTP_202_ACCEPTED)
         
         except Exception as e:
+            logger.error(f"Error in UpdateMarkForAssessmentView: {str(e)}")
             return Response({
                 'error': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

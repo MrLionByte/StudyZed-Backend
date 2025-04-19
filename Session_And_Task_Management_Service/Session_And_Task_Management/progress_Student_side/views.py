@@ -17,6 +17,10 @@ import calendar
 from students_in_session.permissions import StudentAccessPermission
 # Create your views here.
 
+
+import logging
+logger = logging.getLogger(__name__)
+
 class StudentPersonalAssessmentPerformanceView(APIView):
     """ 
     API view to retrieve student performance based on their assessments per month.
@@ -37,6 +41,8 @@ class StudentPersonalAssessmentPerformanceView(APIView):
 
         try:
             session = Session.objects.get(session_code=session_code)
+            if session.is_active == False:
+                return Response({'error': 'Session is not active.'}, status=status.HTTP_400_BAD_REQUEST)
             StudentsInSession.objects.get(
                 session=session,student_code=user_data['user_code']) 
         
@@ -112,7 +118,6 @@ class StudentPersonalTaskPerformanceView(APIView):
 
         today = timezone.now()
         first_day_of_month = today.replace(day=1)
-        print(today, first_day_of_month)
         tasks = Tasks.objects.filter(
             session=session,
             due_date__gte=first_day_of_month,
@@ -124,19 +129,12 @@ class StudentPersonalTaskPerformanceView(APIView):
             student__student_code=user_data['user_code']
             # is_late_submission = False
             )
-        for tas in tasks:
-            print(tas)
         total_tasks = tasks.count()
-        print("Total task", total_tasks)
         submitted_tasks = student_tasks.count()
-        print("Submitted Tasks", submitted_tasks)
         missed_tasks = total_tasks - submitted_tasks
-        print("Missed Tasks", missed_tasks)
         
         assigned_days = tasks.values("due_date").distinct().count()
-        print("assigned_days Tasks", assigned_days)
         unassigned_days = today.day - assigned_days
-        print("unassigned_days Tasks", unassigned_days)
         
         total_score = student_tasks.aggregate(
             total=models.Sum('score'))['total'] or 0

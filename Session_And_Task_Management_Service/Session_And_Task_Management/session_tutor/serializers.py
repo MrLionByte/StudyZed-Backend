@@ -35,7 +35,6 @@ class CreateSessionSerializers(serializers.ModelSerializer):
         if Session.objects.filter(
             tutor_code=tutor_code, session_name=session_name
         ).exists():
-            print("ERROR OCCUR :", session_name, tutor_code)
             raise serializers.ValidationError(
                 f"Session '{session_name}' already exists for tutor ID '{tutor_code}'."
             )

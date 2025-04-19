@@ -3,7 +3,7 @@ import time
 from zoneinfo import ZoneInfo
 import redis
 from rest_framework.response import Response
-from rest_framework import generics, status
+from rest_framework import generics, status as http_status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -88,7 +88,7 @@ class SignupEmailProcedureView(generics.CreateAPIView):
                     if retry_count >= max_retries:
                         return Response(
                             {"error": "Service unavailable - task registration failed"},
-                            status=status.HTTP_503_SERVICE_UNAVAILABLE
+                            status=http_status.HTTP_503_SERVICE_UNAVAILABLE
                         )
                     time.sleep(1)
             
@@ -97,7 +97,8 @@ class SignupEmailProcedureView(generics.CreateAPIView):
                 success = False
                 
                 for attempt in range(10):  # Max 10 retries
-                    logger.info(f"Waiting for task completion, attempt {attempt+1}")
+                    logger.info(f"Task status on attempt {attempt+1}: {result.status}")
+
                     if result.status == "SUCCESS":
                         success = True
                         break
@@ -107,7 +108,7 @@ class SignupEmailProcedureView(generics.CreateAPIView):
                     logger.error("Task execution timed out or failed")
                     return Response(
                         {"error": "Task execution timed out"},
-                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        status=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
                     )
 
                 try:
@@ -127,18 +128,18 @@ class SignupEmailProcedureView(generics.CreateAPIView):
                             "message": "Email verification success",
                             "auth-status": "success",
                         },
-                        status=status.HTTP_200_OK,
+                        status=http_status.HTTP_200_OK,
                     )
                 except Exception as e:
                     logger.error(f"Error processing task result: {str(e)}", exc_info=True)
                     return Response(
                         {"error": "Failed to process task result"},
-                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        status=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
                     )
             else:
                 return Response(
                     {"error": "Failed to create task"},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    status=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
         except ValueError as e:
             logger.error("Error ValueError: %s", e, exc_info=True)
@@ -146,7 +147,7 @@ class SignupEmailProcedureView(generics.CreateAPIView):
                 {
                     "message": "Email verification failed, email already in use",
                 },
-                status=status.HTTP_409_CONFLICT,
+                status=http_status.HTTP_409_CONFLICT,
             )
         except CeleryError as e:
             logger.error("Celery Task Error: %s", e, exc_info=True)
@@ -155,7 +156,7 @@ class SignupEmailProcedureView(generics.CreateAPIView):
                     "message": "Background task failed",
                     "auth-status": "failure",
                 },
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                status=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
         except Exception as e:
             logger.error("Error Exception: %s", e, exc_info=True)
@@ -164,7 +165,7 @@ class SignupEmailProcedureView(generics.CreateAPIView):
                     "message": "Email verification failed",
                     "auth-status": "failure",
                 },
-                status=status.HTTP_400_BAD_REQUEST,
+                status=http_status.HTTP_400_BAD_REQUEST,
             )
 
 
@@ -216,7 +217,7 @@ class SignupOTPVerificationView(generics.CreateAPIView):
                         "error": "Invalid data",
                         "details": serializer.errors,
                     },
-                    status=status.HTTP_400_BAD_REQUEST,
+                    status=http_status.HTTP_400_BAD_REQUEST,
                 )
 
             user_under_verification.is_authenticated = True
@@ -227,7 +228,7 @@ class SignupOTPVerificationView(generics.CreateAPIView):
                     "message": "OTP verified successfully. Email is confirmed.",
                     "auth-status": "success",
                 },
-                status=status.HTTP_200_OK,
+                status=http_status.HTTP_200_OK,
             )
 
         except Exception as e:
@@ -237,7 +238,7 @@ class SignupOTPVerificationView(generics.CreateAPIView):
                     "error": f"Faied to verify OTP:, {e}",
                     "auth-status": "failed",
                 },
-                status=status.HTTP_400_BAD_REQUEST,
+                status=http_status.HTTP_400_BAD_REQUEST,
             )
 
 
@@ -278,7 +279,7 @@ class SignupOTPResendView(generics.CreateAPIView):
                 print("WORKING ERROR")
                 return Response(
                     {"error": "ERROR"},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    status=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
             data = result.get()
             expires_at = timezone.make_aware(
@@ -295,7 +296,7 @@ class SignupOTPResendView(generics.CreateAPIView):
                     "message": "OTP resend successfully",
                     "auth-status": "resend",
                 },
-                status=status.HTTP_200_OK,
+                status=http_status.HTTP_200_OK,
             )
 
         except Exception as e:
@@ -305,7 +306,7 @@ class SignupOTPResendView(generics.CreateAPIView):
                     "message": f"OTP resend failed {e}",
                     "auth-status": "failure",
                 },
-                status=status.HTTP_400_BAD_REQUEST,
+                status=http_status.HTTP_400_BAD_REQUEST,
             )
 
 
@@ -342,7 +343,7 @@ class SignupUserDetailsView(generics.CreateAPIView):
                         "error": "Email is not confirmed.Retry from email verification",
                         "auth-status": "unauthorized",
                     },
-                    status=status.HTTP_401_UNAUTHORIZED,
+                    status=http_status.HTTP_401_UNAUTHORIZED,
                 )
             serializer = self.get_serializer(data=request.data)
             print("SERILIZE REQUEST:", serializer)
@@ -353,7 +354,7 @@ class SignupUserDetailsView(generics.CreateAPIView):
                         "error": "Invalid data",
                         "details": serializer.errors,
                     },
-                    status=status.HTTP_400_BAD_REQUEST,
+                    status=http_status.HTTP_400_BAD_REQUEST,
                 )
 
             validated_data = serializer.validated_data
@@ -367,7 +368,7 @@ class SignupUserDetailsView(generics.CreateAPIView):
                     "user": UserSerializer(user).data,
                     "auth-status": "success",
                 },
-                status=status.HTTP_201_CREATED,
+                status=http_status.HTTP_201_CREATED,
             )
         except Exception as e:
             print("Error in user details: " + str(e))
@@ -376,7 +377,7 @@ class SignupUserDetailsView(generics.CreateAPIView):
                     "message": "User created successfully",
                     "auth-status": "success",
                 },
-                status=status.HTTP_400_BAD_REQUEST,
+                status=http_status.HTTP_400_BAD_REQUEST,
             )
 
 
@@ -404,7 +405,7 @@ class SignupWithGoogleAccountView(generics.CreateAPIView):
                         "message": "Google ID and email are required",
                         "auth-status": "validation-failed",
                     },
-                    status=status.HTTP_400_BAD_REQUEST,
+                    status=http_status.HTTP_400_BAD_REQUEST,
                 )
             
             user = UserAddon.objects.filter(google_id=google_id).first()
@@ -417,7 +418,7 @@ class SignupWithGoogleAccountView(generics.CreateAPIView):
                             "message": "Email already in use with a different account",
                             "auth-status": "email-exists",
                         },
-                        status=status.HTTP_400_BAD_REQUEST,
+                        status=http_status.HTTP_400_BAD_REQUEST,
                     )
                 
                 role = request.data.get("role")
@@ -427,7 +428,7 @@ class SignupWithGoogleAccountView(generics.CreateAPIView):
                             "message": "Role is required for new accounts",
                             "auth-status": "role-required",
                         },
-                        status=status.HTTP_400_BAD_REQUEST,
+                        status=http_status.HTTP_400_BAD_REQUEST,
                     )
                 
                 user = UserAddon.objects.create(
@@ -450,7 +451,7 @@ class SignupWithGoogleAccountView(generics.CreateAPIView):
                             "message": "Your account is blocked. Please contact admin for assistance",
                             "auth-status": "blocked",
                         },
-                        status=status.HTTP_403_FORBIDDEN,
+                        status=http_status.HTTP_403_FORBIDDEN,
                     )
                 
                 auth_status = "success"
@@ -469,7 +470,7 @@ class SignupWithGoogleAccountView(generics.CreateAPIView):
                     "role": user.role,
                     "user_code": user.user_code,
                 },
-                status=status.HTTP_200_OK,
+                status=http_status.HTTP_200_OK,
             )
                 
         except Exception as e:
@@ -480,7 +481,7 @@ class SignupWithGoogleAccountView(generics.CreateAPIView):
                     "auth-status": "failure",
                     "error": str(e),
                 },
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                status=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
 
@@ -516,7 +517,7 @@ class LoginView(APIView):
                         "error": "Email is required",
                         "auth-status": "validation-failed",
                     },
-                    status=status.HTTP_400_BAD_REQUEST,
+                    status=http_status.HTTP_400_BAD_REQUEST,
                 )
 
             user_email = (
@@ -536,7 +537,7 @@ class LoginView(APIView):
                         "message": "Too many login attempts. Please try again later.",
                         "auth-status": "locked-out",
                     },
-                    status=status.HTTP_429_TOO_MANY_REQUESTS,
+                    status=http_status.HTTP_429_TOO_MANY_REQUESTS,
                 )
 
             serializer = LoginSerializer(data=login_data)
@@ -564,7 +565,7 @@ class LoginView(APIView):
                         "message": "Logged in successfully",
                         "auth-status": "success",
                     },
-                    status=status.HTTP_200_OK,
+                    status=http_status.HTTP_200_OK,
                 )
 
                 response.set_cookie(
@@ -590,7 +591,7 @@ class LoginView(APIView):
                     "auth-status": errors.get("auth-status", "validation-failed"),
                     "errors": errors,
                 },
-                status=status.HTTP_400_BAD_REQUEST,
+                status=http_status.HTTP_400_BAD_REQUEST,
             )
 
         except Exception as e:
@@ -601,7 +602,7 @@ class LoginView(APIView):
                     "message": str(e),
                     "auth-status": "server-error",
                 },
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                status=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
 
@@ -661,7 +662,7 @@ class ForgotPasswordEmailView(APIView):
                         "error": "Email not found, user not exisit",
                         "message": "your account not found",
                     },
-                    status=status.HTTP_404_NOT_FOUND,
+                    status=http_status.HTTP_404_NOT_FOUND,
                 )
             if not user.is_active:
                 return Response(
@@ -669,7 +670,7 @@ class ForgotPasswordEmailView(APIView):
                         "error": "User is unauthorized",
                         "message": "User is temporarly blocked, please contact the admin",
                     },
-                    status=status.HTTP_403_FORBIDDEN,
+                    status=http_status.HTTP_403_FORBIDDEN,
                 )
 
             email_task = send_forgot_password_email(user.email)
@@ -678,7 +679,7 @@ class ForgotPasswordEmailView(APIView):
                 print("WORKING 133")
                 return Response(
                     {"error": "ERROR"},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    status=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
             # data = email_task
             expires_at = timezone.make_aware(
@@ -691,7 +692,7 @@ class ForgotPasswordEmailView(APIView):
                     "message": "Email verification success",
                     "auth-status": "success",
                 },
-                status=status.HTTP_200_OK,
+                status=http_status.HTTP_200_OK,
             )
 
         except UserAddon.DoesNotExist:
@@ -700,7 +701,7 @@ class ForgotPasswordEmailView(APIView):
                     "error": "Email not found, user not exisit",
                     "message": "Email not found, user not exisit",
                 },
-                status=status.HTTP_404_NOT_FOUND,
+                status=http_status.HTTP_404_NOT_FOUND,
             )
 
 
@@ -724,20 +725,20 @@ class ForgottenPasswordOTPView(APIView):
         if not email or not otp:
             return Response(
                 {"error": "Email and OTP are required"},
-                status=status.HTTP_400_BAD_REQUEST,
+                status=http_status.HTTP_400_BAD_REQUEST,
             )
         redis_temp = redis_client.hgetall(email)
 
         if not redis_temp or "otp" not in redis_temp:
             return Response(
                 {"error": "OTP expired or invalid"},
-                status=status.HTTP_404_NOT_FOUND,
+                status=http_status.HTTP_404_NOT_FOUND,
             )
 
         if otp != redis_temp["otp"]:
             return Response(
                 {"message": "OTP is incorrect", "auth-status": "failed"},
-                status=status.HTTP_400_BAD_REQUEST,
+                status=http_status.HTTP_400_BAD_REQUEST,
             )
 
         redis_temp["is_authenticated"] = True  # type: ignore
@@ -748,7 +749,7 @@ class ForgottenPasswordOTPView(APIView):
                 "message": "Email verification success",
                 "auth-status": "success",
             },
-            status=status.HTTP_200_OK,
+            status=http_status.HTTP_200_OK,
         )
 
 
@@ -774,7 +775,7 @@ class ForgottenPasswordNewPassword(APIView):
                         "message": "Password cannot be changed",
                         "auth-status": "failed",
                     },
-                    status=status.HTTP_406_NOT_ACCEPTABLE,
+                    status=http_status.HTTP_406_NOT_ACCEPTABLE,
                 )
 
             user = UserAddon.objects.get(email=request.data["email"])
@@ -784,7 +785,7 @@ class ForgottenPasswordNewPassword(APIView):
                         "message": "Password is already the same",
                         "auth-status": "failed",
                     },
-                    status=status.HTTP_409_CONFLICT,
+                    status=http_status.HTTP_409_CONFLICT,
                 )
             user.set_password(request.data["new_password"])
             user.save()
@@ -793,14 +794,14 @@ class ForgottenPasswordNewPassword(APIView):
                     "message": "Password changed successfully",
                     "auth-status": "success",
                 },
-                status=status.HTTP_200_OK,
+                status=http_status.HTTP_200_OK,
             )
         return Response(
             {
                 "message": "Enter a valid email",
                 "auth-status": "failed",
             },
-            status=status.HTTP_200_OK,
+            status=http_status.HTTP_200_OK,
         )
 
 
@@ -828,9 +829,9 @@ class LogoutView(APIView):
             refresh_token = request.data.get("refresh")
             token = RefreshToken(refresh_token)
             token.blacklist()
-            return Response(status=status.HTTP_205_RESET_CONTENT)
+            return Response(status=http_status.HTTP_205_RESET_CONTENT)
         except Exception as e:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return Response(status=http_status.HTTP_400_BAD_REQUEST)
 
 
 ## USER SIGN-UP SAMPLE TOKEN CHECKER }

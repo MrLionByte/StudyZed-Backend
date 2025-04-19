@@ -43,26 +43,31 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    
     "AuthApp",
     "UserApp",
     "Admin_app",
     "Class_app",
-    # To use Django REST Framework
+    
+    # Add on Apps
     "rest_framework",
     "rest_framework.authtoken",
     "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
-    # Add on Apps
-    # 'mjml'
+
     "cloudinary",
     "celery",
+    "django_structlog",
     # "silk",
+    # 'mjml'
+
 ]
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     # "silk.middleware.SilkyMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    'django_structlog.middlewares.RequestMiddleware',
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -89,7 +94,6 @@ CELERY_RESULT_EXTENDED = True
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_TIMEZONE = "UTC"
-
 
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
@@ -198,7 +202,6 @@ SIMPLE_JWT = {
 
 AUTH_USER_MODEL = "AuthApp.UserAddon"
 
-
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "smtp.gmail.com"
 EMAIL_USE_TLS = True
@@ -218,32 +221,73 @@ LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
-        "verbose": {
-            "format": "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
-            "datefmt": "%Y-%m-%d %H:%M:%S",
+        "json_formatter": {
+            "()": "pythonjsonlogger.jsonlogger.JsonFormatter",
+            "format": "%(timestamp)s %(level)s %(name)s %(message)s",
         },
     },
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
+            "formatter": "json_formatter",
         },
         "file": {
             "class": "logging.FileHandler",
             "filename": os.path.join(BASE_DIR, "logs", "app.log"),
-            "formatter": "verbose",
+            "formatter": "json_formatter",
         },
     },
-    "root": {
-        "handlers": ["console", "file"],
-        "level": "DEBUG",
+    "loggers": {
+        "": {
+            "handlers": ["console", "file"],
+            "level": "INFO",
+        },
     },
 }
 
+import structlog
 
-os.makedirs(os.path.join(BASE_DIR, "logs"), exist_ok=True)
+structlog.configure(
+    processors=[
+        structlog.contextvars.merge_contextvars,
+        structlog.stdlib.filter_by_level,
+        structlog.processors.TimeStamper(fmt="iso"),
+        structlog.stdlib.add_logger_name,
+        structlog.stdlib.add_log_level,
+        structlog.stdlib.PositionalArgumentsFormatter(),
+        structlog.processors.StackInfoRenderer(),
+        structlog.processors.format_exc_info,
+        structlog.processors.UnicodeDecoder(),
+        structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
+    ],
+    logger_factory=structlog.stdlib.LoggerFactory(),
+    wrapper_class=structlog.stdlib.BoundLogger,
+    cache_logger_on_first_use=True,
+)
+
+# os.makedirs(os.path.join(BASE_DIR, "logs"), exist_ok=True)
+
+DJANGO_STRUCTLOG_CELERY_ENABLED = True
 
 BOOTSTRAP_SERVERS = os.getenv("BOOTSTRAP_SERVERS")
 REDIS_HOST = os.getenv("REDIS_HOST")
 REDIS_PORT = os.getenv("REDIS_PORT")
 
 APPEND_SLASH = False
+
+AUTH_SETTINGS = {
+    'OTP_LENGTH': 6,
+    'OTP_EXPIRY_MINUTES': 5,
+    'MAX_LOGIN_ATTEMPTS': 5,
+    'LOGIN_LOCKOUT_SECONDS': 1800,
+}
+
+EMAIL_TEMPLATES = {
+    'OTP_VERIFICATION': 'otp',
+    'PASSWORD_RESET': 'forgot_password',
+}
+
+REDIS_PREFIXES = {
+    'OTP': 'otp:',
+    'LOGIN_COUNT': 'login_count:',
+}

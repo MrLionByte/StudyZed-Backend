@@ -39,15 +39,16 @@ class ForgottenPasswordOTPViewTest(TestCase):
         """Ensure OTP verification works"""
         mock_redis_get.return_value = {"otp": self.otp}
         
-        response = self.client.post(reverse("forgot_password_otp"), {"email": self.email, "otp": "999999"})
+        response = self.client.post(reverse("forgot_password_otp"), 
+                               {"email": self.email, "otp": self.otp})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     @patch("AuthApp.views.redis_client.get")  
     def test_incorrect_otp(self, mock_redis_get):
         """Ensure incorrect OTP fails"""
-        mock_redis_get.return_value = {"otp":None}  
-
-        response = self.client.post(reverse("forgot_password_otp"), {"email": self.email, "otp": "999999"})
+        mock_redis_get.return_value = {"otp": self.otp}
+        response = self.client.post(reverse("forgot_password_otp"), 
+                               {"email": self.email, "otp": "999999"})
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 class LoginViewTest(TestCase):

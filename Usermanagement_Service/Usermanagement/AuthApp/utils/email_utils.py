@@ -4,9 +4,9 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from jinja2 import Template
 from django.conf import settings
-from .tasks import *
 from celery import shared_task
 from django.core.mail import send_mail
+from .tasks import generate_otp
 
 
 def send_email_template(recipient, template_name, email_data):

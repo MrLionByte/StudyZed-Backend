@@ -15,6 +15,8 @@ from session_tutor.producer import kafka_producer
 from students_in_session.permissions import StudentAccessPermission
 # Create your views here.
 
+import logging
+logger = logging.getLogger(__name__)
     
 class GetAllTasksForStudentView(generics.ListAPIView):
     serializer_class = TasksThisMonthSerializer
@@ -24,6 +26,7 @@ class GetAllTasksForStudentView(generics.ListAPIView):
         today = now()
         session_code = self.request.query_params.get('session_code')
         if not session_code:
+            logger.error("Session code is required.")
             raise ValidationError("Session code is required.")
         return Tasks.objects.filter(
             due_date__year=today.year, 
@@ -40,6 +43,7 @@ class AttendTasksView(APIView):
         answer = request.data.get("answer")
 
         if not task_id or not answer:
+            logger.error("Task ID and answer are required.")
             return Response(
                 {"error": "Task ID and answer are required."},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -49,6 +53,7 @@ class AttendTasksView(APIView):
             user_data = decode_jwt_token(request)
             student_code = user_data["user_code"]
         except Exception as e:
+            logger.error(f"Token decoding failed: {str(e)}")
             return Response(
                 {"error": "Invalid or missing token.", "details": str(e)},
                 status=status.HTTP_401_UNAUTHORIZED,
@@ -57,6 +62,7 @@ class AttendTasksView(APIView):
         try:
             student = StudentsInSession.objects.get(student_code=student_code)
         except StudentsInSession.DoesNotExist:
+            logger.error(f"Student with code {student_code} not found.")
             return Response(
                 {"error": "Student not found."},
                 status=status.HTTP_404_NOT_FOUND,
@@ -65,6 +71,7 @@ class AttendTasksView(APIView):
         try:
             task = Tasks.objects.get(id=task_id)
         except Tasks.DoesNotExist:
+            logger.error(f"Task with ID {task_id} not found.")
             return Response(
                 {"error": "Task not found."},
                 status=status.HTTP_404_NOT_FOUND,
@@ -98,4 +105,3 @@ class AttendTasksView(APIView):
             {"message": "Task attended successfully.", "task_id": task_id, "answer": answer},
             status=status.HTTP_201_CREATED,
         )
-

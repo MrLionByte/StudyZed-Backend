@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: user-service
-        image: mrlionbyte/user-management:v1.4.5.8
+        image: mrlionbyte/user-management:v1.4.6.8
         ports:
           - containerPort: 8005
         envFrom:
@@ -60,6 +60,10 @@ kind: Service
 metadata:
   name: user-service
   namespace: studyzed
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/path: "/api/user-service/metrics"
+    prometheus.io/port: "8005"
 spec:
   selector:
     app: user-service

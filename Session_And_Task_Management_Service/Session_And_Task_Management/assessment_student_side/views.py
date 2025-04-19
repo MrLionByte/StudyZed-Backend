@@ -1,3 +1,4 @@
+import logging
 from django.shortcuts import render
 from rest_framework import views, generics ,status
 from .models import (Session, StudentsInSession, StudentAssessmentResponse, 
@@ -14,19 +15,28 @@ from .serializers import *
 from session_tutor.producer import kafka_producer
 # Create your views here.
 
+logger = logging.getLogger(__name__)
+
 class GetAssessmentsForStudentViews(views.APIView):
     def get(self, request):
         session_code = request.GET.get("session_code")
 
         try:
             session = Session.objects.get(session_code=session_code)
+            if not session.is_active:
+                logger.error(f"Session with code {session_code} is not active")
+                return Response({
+                    'error': 'Session is not active'
+                }, status=status.HTTP_400_BAD_REQUEST)
             assessments = Assessments.objects.filter(session_key=session)
             serializer = AssessmentsSerializer(assessments, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         except Session.DoesNotExist:
+            logger.error(f"Session with code {session_code} not found")
             return Response({"error": "Session not found"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
+            logger.error(f"Error in GetAssessmentsForStudentViews: {str(e)}")
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -38,8 +48,10 @@ class AttendAssessmentViews(views.APIView):
         try:
             student = decode_jwt_token(request)
         except jwt.ExpiredSignatureError:
+            logger.error("Token has expired")
             return Response({"error": "Token has expired"}, status=status.HTTP_401_UNAUTHORIZED)
         except Exception as e:
+            logger.error(f"Error in AttendAssessmentViews: {str(e)}")
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
         try:
@@ -77,7 +89,7 @@ class AttendAssessmentViews(views.APIView):
             return Response({'2122'},status=status.HTTP_202_ACCEPTED)
         
         except Exception as e:
-            print(e)
+            logger.error(f"Error in AttendAssessmentViews: {str(e)}")
             return Response({"error": str(e)},status=status.HTTP_400_BAD_REQUEST)
 
 class GetAttendedAssessmentsView(generics.ListAPIView):
@@ -99,5 +111,5 @@ class GetAttendedAssessmentsView(generics.ListAPIView):
             raise NotFound("User not found")
         
         except Exception as e:
-            print("Error :",e)
+            logger.error(f"Error in GetAttendedAssessmentsView: {str(e)}")
             raise ParseError(str(e))

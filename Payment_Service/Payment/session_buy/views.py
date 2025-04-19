@@ -75,9 +75,9 @@ def stripe_webhook(request):
     print("STRIPE WORK 1")
     payload = request.body
     sig_header = request.META['HTTP_STRIPE_SIGNATURE']
-    endpoint_secret = settings.STRIPE_WEBHOOK_SECRET
+    endpoint_secret = settings.STRIPE_WEBHOOK_SECRET_SESSION
 
-    print("STRIPE WORK 2")
+    print("STRIPE WORK 2", endpoint_secret)
     try:
         
         print("STRIPE WORK 3")
@@ -96,7 +96,8 @@ def stripe_webhook(request):
             if payment_intent:
                 payment = stripe.PaymentIntent.retrieve(payment_intent)
 
-                tutor_code = session['metadata']['tutor_code']
+                tutor_code = session.get('metadata', {}).get('user_code') or session.get('metadata', {}).get('tutor_code')
+
                 session_code = session['metadata']['session_code']
                 amount = session['amount_total'] / 100  # Convert from cents to dollars
 

@@ -12,7 +12,6 @@ class EnterSessionSerializer(serializers.Serializer):
         fields = ["session", "student_code", "session"]
     
     def validate_session_code(self, value):
-        print("222222")
         try:
             session = Session.objects.get(session_code=value)
         except Session.DoesNotExist:
@@ -20,9 +19,7 @@ class EnterSessionSerializer(serializers.Serializer):
         return session
 
     def create(self, validated_data):
-        print("33333333")
         session = validated_data.pop("session_code")
-        print("VALIDATED DAT :", validated_data.get('student_code'), session)
         # session_data = 
         if StudentsInSession.objects.filter(
             session=session, student_code=validated_data.get('student_code')).exists():
@@ -37,7 +34,7 @@ class EnterSessionSerializer(serializers.Serializer):
             })
         student_code = validated_data.get('student_code')
         data = {
-                "message": f"student :{student_code} has joined this session",
+                "message": f"student :a student has joined this session",
                 "title": f"joined:{student_code}",
                 "user_code": session.tutor_code,
                 "type": "reminder",

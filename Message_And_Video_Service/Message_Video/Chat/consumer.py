@@ -1,4 +1,5 @@
 import json
+import logging
 from channels.generic.websocket import AsyncWebsocketConsumer
 from .models import OneToOneMessage, User
 from .views import get_chatted_user
@@ -13,6 +14,7 @@ from mongoengine.queryset.visitor import Q
 from django.conf import settings
 import redis.asyncio as redis_async
 
+logger = logging.getLogger(__name__)
 
 class ChatConsumer(AsyncWebsocketConsumer):
     def __init__(self, *args, **kwargs):
@@ -22,9 +24,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def get_redis(self):
         redis_host = "redis-service"
         redis_port = 6379
-        print(f"Attempting to connect to Redis at {redis_host}:{redis_port}")
         redis_url = f"redis://{redis_host}:{redis_port}/2"
-        print(f"Redis URL: {redis_url}")
         self.redis = redis_async.from_url(
             redis_url,
             decode_responses=True,
@@ -77,7 +77,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     self.channel_name
                 )
             else:
-                print(f"Channel {self.channel_name} is already a member of {group_key}")
+                logger.info(f"Already connected to group: {self.room_group_name}")
             
             await self.accept()
             
@@ -88,7 +88,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
             #     )
             #     self.channel_added = True 
             
-            # print("Connection accepted successfully DONE")
             # await self.accept()
     
             history = await self.get_chat_history(self.user.user_code, recipient_user)
@@ -99,7 +98,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     'messages': history
                 }, default=str))
         except Exception as e:
-            print(f"Connection error in connect : {str(e)}")
+            logger.error(f"Connection error in connect: {str(e)}")
 
     async def disconnect(self, close_code):
         redis = await self.get_redis()
@@ -145,16 +144,16 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 }
             )
         except Exception as e:
-            print(f"Error in receive: {str(e)}")
+            logger.error(f"Error in receive: {str(e)}")
+            # await self.send(text_data=json.dumps({
+            #     'error': str(e)
+            # }))
             
             
     async def chat_message(self, event):
-        print("222")
         if hasattr(self, 'message_handled') and self.message_handled == event['timestamp']:
             return
-        print("333")
         self.message_handled = event['timestamp']
-        print("444", self.message_handled)
         await self.send(text_data=json.dumps({
                 'type': event['type'], 
                 'message': event['message'],
@@ -190,12 +189,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
             
             if not user or not recipient:
                 return []
-            print("1111")
             messages = OneToOneMessage.objects(
                     (Q(sender=user) & Q(recipient=recipient)) |
                     (Q(sender=recipient) & Q(recipient=user))
                 ).order_by('timestamp')
-            print("5555")
             
             return [{
                 'message': msg.content,
@@ -203,7 +200,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 'timestamp': msg.created_on
                 } for msg in messages]
         except Exception as e:
-            print("ERROR AT GET CHAt history", e)
+            logger.error(f"Error fetching chat history: {str(e)}")
+            return []
 
 class PersonalChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -223,7 +221,7 @@ class PersonalChatConsumer(AsyncWebsocketConsumer):
             await self.accept()
             
         except Exception as e:
-            print(f"Connection error: {str(e)}")
+            logger.error(f"Connection error in PersonalChatConsumer: {str(e)}")
 
     async def receive(self, text_data=None, bytes_data=None):
         data = json.loads(text_data)

@@ -295,14 +295,14 @@ jobs:
       - name: Update Deployments
         run: |
           # Update main services -
-          kubectl set image deployment/user-service user-service=mrlionbyte/user-management:v1.4.4.4 -n studyzed
-          kubectl set image deployment/payment-service payment-service=mrlionbyte/payment-management:v1.4.1.6 -n studyzed
-          kubectl set image deployment/session-and-task-service session-and-task-service=mrlionbyte/session-and-task-management:v1.4.2.1 -n studyzed
+          kubectl set image deployment/user-service user-service=mrlionbyte/user-management:v1.4.6.8 -n studyzed
+          kubectl set image deployment/payment-service payment-service=mrlionbyte/payment-management:v1.4.2.6 -n studyzed
+          kubectl set image deployment/session-and-task-service session-and-task-service=mrlionbyte/session-and-task-management:v1.4.2.7 -n studyzed
           kubectl set image deployment/notification-service notification-service=mrlionbyte/notification-management:v1.4.4.0 -n studyzed
           kubectl set image deployment/communication-service communication-service=mrlionbyte/messages-management:v1.4.3.9 -n studyzed
           
           # Update worker services -
-          kubectl set image deployment/celery-worker celery-worker=mrlionbyte/usermanagement-celery_worker:v1.4.1.4 -n studyzed
+          kubectl set image deployment/celery-worker celery-worker=mrlionbyte/usermanagement-celery_worker:v1.4.2.2 -n studyzed
           kubectl set image deployment/celery-worker-notification celery-worker-notification=mrlionbyte/celery-worker-notification:v1.3.7 -n studyzed
 
       - name: Verify Deployment

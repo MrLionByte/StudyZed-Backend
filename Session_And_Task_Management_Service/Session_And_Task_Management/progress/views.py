@@ -14,6 +14,10 @@ from django.db.models import Q, F, Max,Count,Avg
 from session_tutor.permissions import TutorAccessPermission
 
 # Create your views here.
+
+import logging
+logger = logging.getLogger(__name__)
+
 NewSerializer = ''
 
 class StudentsAssessmentPerformancePerMonthViews(APIView):
@@ -28,13 +32,17 @@ class StudentsAssessmentPerformancePerMonthViews(APIView):
     
     def get(self, request, *args, **kwargs):
         session_code = request.GET.get('session_code')
-        print("SESSION _ ID: " + session_code)
         if not session_code:
+            logger.error("Session CODE is required.")
             return Response({'error': 'Session CODE is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             session = Session.objects.get(session_code=session_code)
+            if session.is_active == False:
+                logger.error("Session is not active.")
+                return Response({'error': 'Session is not active.'}, status=status.HTTP_400_BAD_REQUEST)
         except Session.DoesNotExist:
+            logger.error("Session not found.")
             return Response({'error': 'Session not found.'}, status=status.HTTP_404_NOT_FOUND)
 
         today = timezone.now()
@@ -101,13 +109,16 @@ class StudentsDailyAssessmentPerformancePerMonthViews(APIView):
     
     def get(self, request, *args, **kwargs):
         session_code = request.GET.get('session_code')
-        print("SESSION _ ID: " + session_code)
         if not session_code:
             return Response({'error': 'Session CODE is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             session = Session.objects.get(session_code=session_code)
+            if session.is_active == False:
+                logger.error("Session is not active.")
+                return Response({'error': 'Session is not active.'}, status=status.HTTP_400_BAD_REQUEST)
         except Session.DoesNotExist:
+            logger.error("Session not found.")
             return Response({'error': 'Session not found.'}, status=status.HTTP_404_NOT_FOUND)
 
         today = timezone.now()

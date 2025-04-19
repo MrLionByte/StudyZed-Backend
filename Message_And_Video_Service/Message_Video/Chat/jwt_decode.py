@@ -2,7 +2,9 @@ import jwt
 from django.conf import settings
 from rest_framework.exceptions import ValidationError, AuthenticationFailed
 from Chat.models import User
+import logging
 
+logger = logging.getLogger(__name__)
 
 def decode_jwt_token(request):
     token = request.META.get("HTTP_AUTHORIZATION", " ").split(" ")[1]
@@ -39,9 +41,9 @@ def decode_jwt_token_for_chat(token):
         return jwt_data
 
     except ValidationError as e:
-        print("VALIDATION in JWT DECODE", e)
+        logger.error("Validation error in JWT decode", e)
         raise AuthenticationFailed("Invalid token")
 
     except Exception as e:
-        print("ERROR in JWT DECODE", e)
+        logger.error("Error decoding JWT token", e)
         raise AuthenticationFailed("Invalid token")

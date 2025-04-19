@@ -13,6 +13,8 @@ from students_in_session.permissions import StudentAccessPermission
 
 # Create your views here.
 
+import logging
+logger = logging.getLogger(__name__)
 
 class StudentDashboardDataView(views.APIView):
     permission_class = [StudentAccessPermission]
@@ -21,13 +23,22 @@ class StudentDashboardDataView(views.APIView):
 
         session_code = request.query_params.get("session_code")
         user_data = decode_jwt_token(request)
-        print(request.data)
-        print(session_code)
         today = now().date()
         # start_week = today - timedelta(days=today.weekday())
         # end_week = start_week + timedelta(days=6)
         start_week = today - timedelta(days=6)
         end_week = today
+        
+        # total_assessments = Assessments.objects.filter(
+        #     Q(session_key__session_code=session_code) &
+        #     Q(session_key__is_active=True) &
+        #     Q(start_time__date__range=(start_week, end_week))
+        # ).count()
+        
+        # if total_assessments == 0:
+        #     return Response({
+        #         'error': 'Session is not active or no assessments found'},
+        #         status=status.HTTP_400_BAD_REQUEST)
 
         total_assessments = Assessments.objects.filter(
             session_key__session_code=session_code,
@@ -66,7 +77,6 @@ class StudentDashboardDataView(views.APIView):
         performance = (
             (total_scheduled / total_completed * 100) if total_completed != 0 else 0
         )
-        print(total_scheduled, total_completed)
         completion_rate = (
             (total_completed / total_scheduled) * 100 if total_scheduled > 0 else 0
         )

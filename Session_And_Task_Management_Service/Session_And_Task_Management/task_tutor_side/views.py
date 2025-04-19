@@ -17,6 +17,9 @@ from django.core.serializers import serialize
 from session_tutor.permissions import TutorAccessPermission
 # Create your views here.
 
+import logging
+logger = logging.getLogger(__name__)
+
 class CreateNewTaskView(generics.CreateAPIView):
     serializer_class = TasksSerializer
     permission_classes = [TutorAccessPermission]
@@ -56,7 +59,7 @@ class CreateNewTaskView(generics.CreateAPIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         
         except Exception as e:
-            print("ERROR TASK :", e)
+            logger.error(f"Error creating task: {str(e)}")
             return
         
 # class GetAllTasksView(generics.ListAPIView):
@@ -113,12 +116,15 @@ class GiveMarkForDailyTaskView(generics.UpdateAPIView):
         task_data = self.get_object()
         score = request.data.get('score')
         if score is None:
+            logger.error("Score is required.")
             raise ValidationError("Score is required.")
         try:
             score = int(score)
             if not (1 <= score <= 10):
+                logger.error("Score must be between 1 and 10.")
                 raise ValidationError("Score must be between 1 and 10.")
         except ValueError:
+            logger.error("Score must be a number.")
             raise ValidationError("Score must be a number.")
 
         task_data.score = score

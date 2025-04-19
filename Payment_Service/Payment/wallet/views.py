@@ -104,16 +104,13 @@ class StripeWalletTransactionView(APIView):
             user_code = request.data.get('user_code')
             url = request.data.get("url")
             amount = int(request.data.get('amount'))*100  # Amount in cents (e.g., $10 = 1000)
-            # currency_mode = request.data.get('currency_mode')
+            currency = request.data.get('currency', 'inr')
 
-            # session_key = Subscription.objects.get(session_code=session_code, tutor_code=tutor_code)
-            # print("SESSIOn KEY :",session_key)
-            print("AS :: AS", amount, user_code)
             checkout_transaction = stripe.checkout.Session.create(
                 line_items=[
                     {
                         'price_data': {
-                            'currency': 'inr',
+                            'currency': currency,
                             'product_data': {
                                 'name': user_code,
                             },
@@ -128,7 +125,7 @@ class StripeWalletTransactionView(APIView):
                 metadata={
                     'account_no': account_no,
                     'user_code': user_code,
-                    'currency': 'inr'
+                    'currency': currency,
                 },
             )
             print("AFTER SESSIOn :",checkout_transaction)
@@ -147,13 +144,13 @@ class StripeWalletTransactionView(APIView):
   
 @csrf_exempt
 @require_POST
-def stripe_webhook(request):
+def stripe_webhook_wallet(request):
     print("STRIPE WORK 1")
     payload = request.body
     sig_header = request.META['HTTP_STRIPE_SIGNATURE']
-    endpoint_secret = settings.STRIPE_WEBHOOK_SECRET
+    endpoint_secret = settings.STRIPE_WEBHOOK_SECRET_WALLET
 
-    print("STRIPE WORK 2")
+    print("STRIPE WORK 2", endpoint_secret)
     try:
         
         print("STRIPE WORK 3")
@@ -171,15 +168,11 @@ def stripe_webhook(request):
 
             if payment_intent:
                 payment = stripe.PaymentIntent.retrieve(payment_intent)
-
                 user_code = session['metadata']['user_code']
-                account_no = session['metadata']['account_no']
-                currency = session['metadata']['currency']
+                wallet_key = Wallet.objects.get(user_code=user_code)
+
+                currency = session['metadata'].get('currency', 'inr')
                 amount = session['amount_total'] / 100  # Convert from cents to dollars
-                print("WALLET KEY", account_no, user_code, "=> payment :", payment)
-                wallet_key = Wallet.objects.get(
-                    account_number=account_no, user_code=user_code)
-                print(wallet_key)
                 
                 WalletTransactions.objects.create(
                     wallet_key=wallet_key,
@@ -188,9 +181,7 @@ def stripe_webhook(request):
                     transaction_id=session_id,
                     currency=currency,
                     status="COMPLETED"
-                    
                 )
-
                 print(f"Payment successful: {payment_intent}")
 
             else:
@@ -205,3 +196,7 @@ def stripe_webhook(request):
     except stripe.error.SignatureVerificationError as e:
         print("Signature verification failed", e)
         return JsonResponse({'error': 'Signature verification failed'}, status=400)
+    
+    except Exception as e:
+        print("Error processing webhook:", str(e))
+        return JsonResponse({'error': str(e)}, status=400)

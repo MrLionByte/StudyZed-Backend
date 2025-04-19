@@ -73,3 +73,7 @@ urllib3==2.3.0
 vine==5.1.0
 wcwidth==0.2.13
 gunicorn==23.0.0
+django-structlog==9.1.1
+python-json-logger==3.3.0
+prometheus-client==0.21.1
+structlog==25.2.0

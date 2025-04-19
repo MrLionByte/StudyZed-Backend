@@ -13,15 +13,24 @@ from session_tutor.utils.jwt_utils import decode_jwt_token
 from session_tutor.permissions import TutorAccessPermission
 # Create your views here.
 
+import logging
+logger = logging.getLogger(__name__)
 
 class TutorDashboardDataView(views.APIView):
     permission_classes = [TutorAccessPermission]
     
     def get(self, request):
         
-        session_code = request.query_params.get("session_code")
-        print(request.data)
-        print(session_code)
+        session_code = request.query_params.get("session_code")        
+        # no_of_students = StudentsInSession.objects.filter(
+        #   Q(session__session_code=session_code) &
+        #     Q(session__is_active=True)
+        # ).count()
+    
+        # if no_of_students == 0:
+        #     return Response({
+        #         'error': 'Session is not active or no students found'},
+        #         status=status.HTTP_400_BAD_REQUEST)
         
         no_of_students = StudentsInSession.objects.filter(
             session__session_code=session_code).count()

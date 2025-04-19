@@ -182,3 +182,28 @@ BOOTSTRAP_SERVERS = os.environ['BOOTSTRAP_SERVERS']
 # To Run daphne -b 0.0.0.0 -p 8000 Message_Video.asgi:application
 REDIS_HOST=os.getenv("REDIS_HOST", "redis-service")
 REDIS_PORT=os.getenv("REDIS_PORT", "6379")
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
+            "datefmt": "%Y-%m-%d %H:%M:%S",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+        },
+        "file": {
+            "class": "logging.FileHandler",
+            "filename": os.path.join(BASE_DIR, "logs", "app.log"),
+            "formatter": "verbose",
+        },
+    },
+    "root": {
+        "handlers": ["console", "file"],
+        "level": "DEBUG",
+    },
+}

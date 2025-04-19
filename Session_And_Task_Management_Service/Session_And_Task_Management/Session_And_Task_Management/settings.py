@@ -62,8 +62,8 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_simplejwt",
     "corsheaders",
-    "silk",
-    "storages",
+     "storages",
+     
     # 'celery',
     # 'django_celery_beat',
 ]
@@ -77,7 +77,6 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "silk.middleware.SilkyMiddleware",
 ]
 
 ROOT_URLCONF = "Session_And_Task_Management.urls"
@@ -175,7 +174,6 @@ LOGGING = {
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
-            "formatter": "verbose",
         },
         "file": {
             "class": "logging.FileHandler",
@@ -212,4 +210,11 @@ STORAGES = {
 MEDIA_URL = f"https://{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com/"
 
 BOOTSTRAP_SERVERS = os.getenv('BOOTSTRAP_SERVERS')
-print(BOOTSTRAP_SERVERS)
+
+if DEBUG:
+    INSTALLED_APPS += [
+        "silk",
+    ]
+    MIDDLEWARE += [
+        "silk.middleware.SilkyMiddleware",
+    ]

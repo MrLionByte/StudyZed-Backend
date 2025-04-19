@@ -151,7 +151,8 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY')
 STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY')
-STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET')
+STRIPE_WEBHOOK_SECRET_SESSION = os.getenv('STRIPE_WEBHOOK_SECRET_SESSION')
+STRIPE_WEBHOOK_SECRET_WALLET = os.getenv('STRIPE_WEBHOOK_SECRET_WALLET')
 
 # stripe listen --forward-to http://127.0.0.1:8008/session-buy/stripe-webhook/
 # stripe listen --forward-to http://127.0.0.1:8008/wallet/stripe-webhook/
@@ -160,4 +161,29 @@ SITE_URL = os.getenv('SITE_URL')
 
 JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY')
 
-BOOTSTRAP_SERVERS = os.getenv('BOOTSTRAP_SERVERS')
+BOOTSTRAP_SERVERS = os.getenv('BOOTSTRAP_SERVERS' , "kafka:9092")
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
+            "datefmt": "%Y-%m-%d %H:%M:%S",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+        },
+        "file": {
+            "class": "logging.FileHandler",
+            "filename": os.path.join(BASE_DIR, "logs", "app.log"),
+            "formatter": "verbose",
+        },
+    },
+    "root": {
+        "handlers": ["console", "file"],
+        "level": "DEBUG",
+    },
+}
