@@ -61,7 +61,6 @@ class AdminLoginView(APIView):
         
         except Exception as e:
             error_message = str(e)
-            print("Error occurred:", error_message)
             return Response(
                 {"error": error_message, "auth-status": "failed"},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -81,7 +80,6 @@ class AdminAllStudentsListView(generics.ListAPIView):
     serializer_class = UserAddonSerializer
     
     def get_queryset(self):
-        print("QUERRy 11")
         return UserAddon.objects.filter(role="STUDENT")
     
 
@@ -94,7 +92,6 @@ class AdminBlockUserView(generics.UpdateAPIView):
         user = self.get_object()
         user.is_active = not user.is_active
         user.save()
-        print(user.is_active)
         # if not request.user.is_superuser:
         #     return Response({"detail": "You do not have permission to block/unblock users."},
         #                     status=status.HTTP_403_FORBIDDEN)

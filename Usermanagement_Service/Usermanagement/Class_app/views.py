@@ -1,3 +1,4 @@
+import logging
 from rest_framework import generics, views, status
 from .serializers import AllStudentsInAClassSerializer, BatchMatesInAClassSerializer
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -5,7 +6,7 @@ from rest_framework.response import Response
 from AuthApp.models import UserAddon
 
 # Create your views here.
-
+logger = logging.getLogger(__name__)
 
 class StudentDetailsView(generics.RetrieveAPIView):
     pass
@@ -13,8 +14,9 @@ class StudentDetailsView(generics.RetrieveAPIView):
 class AllStudentsInAClassView (views.APIView):
     def post(self, request):
         student_codes = request.data
-        print(student_codes)
+        logger.info("Students user-codes", extra={'data': student_codes})
         if not student_codes:
+            logger.error('No student codes provided', extra={'data': request.data})
             return Response({"error": "No student codes provided"}, status=status.HTTP_400_BAD_REQUEST)
         
         students = UserAddon.objects.filter(user_code__in=student_codes)
@@ -28,9 +30,7 @@ class TutorOfSessionDetailsView(views.APIView):
     
     def get(self, request):
         tutor_code = request.query_params.get("tutor_code")
-        print(tutor_code)
         tutor = UserAddon.objects.get(user_code = tutor_code)
-        print(tutor_code)
         data = {
             "tutor_code":tutor_code,
             "tutor_id": tutor.id,
@@ -43,8 +43,10 @@ class TutorOfSessionDetailsView(views.APIView):
 class AllBatchMatesInAClassView (views.APIView):
     def post(self, request):
         student_codes = request.data
-        print(student_codes)
+        logger.info("Students user-codes", extra={'data': student_codes})
+        
         if not student_codes:
+            logger.error('No student codes provided', extra={'data': request.data})
             return Response({"error": "No student codes provided"}, status=status.HTTP_400_BAD_REQUEST)
         
         students = UserAddon.objects.filter(user_code__in=student_codes)

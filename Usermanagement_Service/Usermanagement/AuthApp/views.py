@@ -269,14 +269,12 @@ class SignupOTPResendView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         try:
             email = temp_mail
-            print("SER EMAIl :", email)
+            
             # email_task = resend_otp_verification_email.delay(email)
             email_task = resend_otp_verification_email.apply_async(args=[email])
             
             result = AsyncResult(email_task.id)
-            print("RESULT :", result.get(), "  :::: ", result.result)
             if result.status == "PENDING":
-                print("WORKING ERROR")
                 return Response(
                     {"error": "ERROR"},
                     status=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -285,8 +283,8 @@ class SignupOTPResendView(generics.CreateAPIView):
             expires_at = timezone.make_aware(
                 data["task"]["expires_at"], timezone=ZoneInfo("UTC")
             )
-            print(type(expires_at))
-            print("REDIS : ", redis_client.hgetall(email))
+
+            logger.info("REDIS : ", extra={'data': redis_client.hgetall(email)})
             new_temp_data = Email_temporary.objects.create(
                 email=email, otp=data["task"]["otp"], expires_at=expires_at
             )
@@ -300,7 +298,7 @@ class SignupOTPResendView(generics.CreateAPIView):
             )
 
         except Exception as e:
-            print("Error details: ", e)
+            logger.exception('Error occurred', extra={'data': str(e)})
             return Response(
                 {
                     "message": f"OTP resend failed {e}",
@@ -332,7 +330,6 @@ class SignupUserDetailsView(generics.CreateAPIView):
 
     def create(self, request):
         try:
-            print("PRINT REQUEST:", request.data)
             email_confirmation = Email_temporary.objects.get(
                 email=request.data["email"]
             )
@@ -346,9 +343,9 @@ class SignupUserDetailsView(generics.CreateAPIView):
                     status=http_status.HTTP_401_UNAUTHORIZED,
                 )
             serializer = self.get_serializer(data=request.data)
-            print("SERILIZE REQUEST:", serializer)
+            
             if not serializer.is_valid():
-                print("Error in serializer: ", serializer.errors)
+                logger.error("Error in serializer", extra={'data': serializer.errors})
                 return Response(
                     {
                         "error": "Invalid data",
@@ -359,9 +356,6 @@ class SignupUserDetailsView(generics.CreateAPIView):
 
             validated_data = serializer.validated_data
             user = serializer.create(validated_data)
-            print("WORKING USER", user)
-            # email_confirmation.delete()
-            print("WORKING UISERDEARILS")
             return Response(
                 {
                     "message": "User created successfully.",
@@ -371,7 +365,7 @@ class SignupUserDetailsView(generics.CreateAPIView):
                 status=http_status.HTTP_201_CREATED,
             )
         except Exception as e:
-            print("Error in user details: " + str(e))
+            logger.exception("Error in user details", extra={'data': str(e)})
             return Response(
                 {
                     "message": "User created successfully",
@@ -474,7 +468,7 @@ class SignupWithGoogleAccountView(generics.CreateAPIView):
             )
                 
         except Exception as e:
-            print(f"Google Auth Exception: {e}")
+            logger.exception(f"Google Auth Exception", extra={'data': str(e)})
             return Response(
                 {
                     "message": "Authentication failed",
@@ -674,9 +668,7 @@ class ForgotPasswordEmailView(APIView):
                 )
 
             email_task = send_forgot_password_email(user.email)
-            print("EMAIL TASK :", email_task)
             if not email_task["success"]:
-                print("WORKING 133")
                 return Response(
                     {"error": "ERROR"},
                     status=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -685,8 +677,7 @@ class ForgotPasswordEmailView(APIView):
             expires_at = timezone.make_aware(
                 email_task["expires_at"], timezone=ZoneInfo("UTC")
             )
-            print(type(expires_at))
-            # print("REDIS : ",redis_client.hgetall(user.email))
+            
             return Response(
                 {
                     "message": "Email verification success",

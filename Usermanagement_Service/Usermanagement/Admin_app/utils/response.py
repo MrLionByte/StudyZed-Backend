@@ -8,5 +8,4 @@ def api_response(success, message, data={}, auth_status=None, status_code=None):
         "data": data,
         "auth-status": auth_status,
     }
-    print(response_structure)
     return Response(response_structure, status=status_code)

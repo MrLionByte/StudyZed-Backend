@@ -1,3 +1,4 @@
+import logging
 from django.shortcuts import render
 from AuthApp.models import Profile
 from rest_framework import status, generics
@@ -13,8 +14,9 @@ from rest_framework.views import APIView
 
 # Create your views here.
 
-## USER PROFILE PIC UPDATE {
+logger = logging.getLogger(__name__)
 
+## USER PROFILE PIC UPDATE {
 
 class UploadAndUpdateProfilePicView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
@@ -159,13 +161,12 @@ class ProfileUpdateView(generics.UpdateAPIView):
 
     def patch(self, request):
         user_to_be_updated = self.get_object()
-        print("User to be updated:", user_to_be_updated)
         serializer = self.get_serializer(
             user_to_be_updated, data=request.data, partial=True
         )
         if serializer.is_valid():
             serializer.save()
-            print("Update Successful")
+            logger.info("Update Successful")
             return Response(serializer.data, status=200)
-        print("Validation Errors:", serializer.errors)
+        logger.error('Error', extra={'data': serializer.errors})
         return Response(serializer.errors, status=400)

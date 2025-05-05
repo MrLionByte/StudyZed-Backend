@@ -9,4 +9,3 @@ websocket_urlpatterns = [
 
     re_path(r'ws/video-one-on-one/(?P<receiver>[\w-]+)/$', LiveSessionOneToOneConsumer.as_asgi()),
 ]
-print("Web Sockrt Url :", websocket_urlpatterns)

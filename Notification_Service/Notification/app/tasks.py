@@ -4,6 +4,7 @@ from datetime import datetime,timedelta
 from django_celery_beat.models import PeriodicTask, IntervalSchedule
 from confluent_kafka import Consumer
 import json
+import logging
 import pytz
 import requests
 from django.db.models import Q
@@ -11,6 +12,8 @@ from mongoengine.queryset.visitor import Q as MongoQ
 from firebase_admin import messaging
 from app.firebase import send_firebase_notification
 from django.core.exceptions import AppRegistryNotReady
+
+logger = logging.getLogger(__name__)
 
 def get_django_models():
     try:
@@ -46,9 +49,8 @@ def send_notification():
 
             if success:
                 notification.update(set__notified=True)
-                print(f"Notification sent to {notification.user_code}: {response}")
             else:
-                print(f"Failed to send notification: {response}")
+                logger.warning(f"Failed to send notification: {response}")
 
     return "Unread notifications processed."
 
@@ -58,12 +60,11 @@ def send_notification_for_user(user_code, title, body):
     This can be called immediately after a notification is created, 
     Send immediate notification
     """
-    print(f"Processing notifications for user: {user_code}")
     
     user_token = get_user_firebase_token(user_code)
     
     if not user_token:
-        print(f"No FCM token found for user {user_code}")
+        logger.warning(f"No FCM token found for user {user_code}")
         
         return f"No FCM token for user {user_code}"
     
@@ -111,8 +112,7 @@ def send_reminder_notification():
             
             if success:
                 reminder.update(set__notified=True)
-                print(f"Reminder sent to {reminder.user_code}: {response}")
             else:
-                print(f"Failed to send reminder: {response}")
+                logger.warning(f"Failed to send reminder: {response}")
     
     return f"Processed {reminders.count()} reminders"

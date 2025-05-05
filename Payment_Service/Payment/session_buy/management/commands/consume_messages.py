@@ -2,10 +2,13 @@
 from django.core.management.base import BaseCommand
 from confluent_kafka import Consumer, KafkaException, KafkaError
 import json
+import logging
 from django.conf import settings
 from session_buy.models import Subscription 
 import time
 import datetime
+
+logger = logging.getLogger(__name__)
 
 class Command(BaseCommand):
     help = 'Consume messages from Kafka and process them'
@@ -14,7 +17,6 @@ class Command(BaseCommand):
         self.consume_messages()
 
     def consume_messages(self):
-        print("Starting Kafka Consumer")
         conf = {
             'bootstrap.servers': str(settings.BOOTSTRAP_SERVERS),
             'group.id': 'my-consumer-group',
@@ -24,40 +26,36 @@ class Command(BaseCommand):
         consumer.subscribe(['create-session'])
 
         try:
-            print("Consuming messages...")
             while True:
-                print("Polling Kafka...")
                 msg = consumer.poll(timeout=5.0)
                 if msg is None:
-                    print("No new messages")
+                    logger.info("No new messages")
                     # continue
                 else:
                     if msg.error():
-                        print(f"Error: {msg.error()}")
+                        logger.error(f"Error: {msg.error()}")
                         if msg.error().code() == KafkaError._PARTITION_EOF:
-                            print(f"End of partition reached: {msg.topic()} [{msg.partition()}] at offset {msg.offset()}")
+                            logger.error(f"End of partition reached: {msg.topic()} [{msg.partition()}] at offset {msg.offset()}")
                         else:
                             raise KafkaException(msg.error())
                     else:
                         message_value = json.loads(msg.value().decode('utf-8'))
-                        print(f"Received message: {message_value}")
+                        logger.info(f"Received message: {message_value}")
                         session_code = message_value.get('session_code')
 
                         if session_code:
-                            print(f"Processing session with code: {session_code}")
                             Subscription.objects.create(
                             session_code=session_code,
                             created_at = message_value.get('created_on'),
                             tutor_code=message_value.get('tutor_code'),
                             subscription_type=message_value.get('session_duration')
                             )
-                            print(f"Session created with code: {session_code}")
-                print(f"Sleeping at: {datetime.datetime.now()}")
+                
                 time.sleep(5)
-                print(f"Woke up at: {datetime.datetime.now()}")
+                logger.info(f"Woke up at: {datetime.datetime.now()}")
                 
         except KeyboardInterrupt:
-            print("Consumer stopped.")
+            logger.warning("Consumer stopped.")
         finally:
             consumer.close()
-            print("Consumer closed.")
+            logger.warning("Consumer closed.")

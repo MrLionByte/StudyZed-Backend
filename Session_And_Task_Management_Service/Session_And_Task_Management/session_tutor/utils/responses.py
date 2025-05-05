@@ -9,5 +9,4 @@ def api_response(status_code ,message=None ,data=None ,auth_status=None ,errors=
         "auth-status"   : auth_status,
         "errors": errors or {},
     }
-    print(status_code)
     return Response(response,status=status_code)

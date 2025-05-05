@@ -18,14 +18,12 @@ from .models import Wallet, WalletTransactions
 # class PaymentSerializer(serializers.ModelSerializer):
 #     subscription_key = serializers.PrimaryKeyRelatedField(queryset=Subscription.objects.all())
 #     renew = serializers.BooleanField(default=False)
-#     print("VALID SERDATA :" ,subscription_key)
     
 #     class Meta:
 #         model = Payment
 #         fields = ('subscription_key', 'amount', 'reference_id', 'status', 'renew')
 
 #     def create(self, validated_data):
-#         print("VALID DATA :" ,validated_data)
 #         renew = validated_data.pop('renew')
 #         subscription = validated_data['subscription_key']
         

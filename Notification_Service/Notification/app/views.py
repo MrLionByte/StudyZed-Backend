@@ -1,3 +1,4 @@
+import logging
 from django.shortcuts import render
 from rest_framework import generics, status
 from rest_framework.response import Response
@@ -7,15 +8,16 @@ import json
 from .serializer import NotificationSerializer
 # Create your views here.
 
+logger = logging.getLogger(__name__)
+
 class TestNotification(APIView):
     def post(self, request):
         data = request.data
-        print(data)
+        logger.info('Test Data', extra={'data': data})
         return None
 
 class SaveFCMTokenAndAuthorize(APIView):
     def post(self, request):
-        print("Register Notify", request)
         try:
             data = json.loads(request.body)
             user_code = data.get("user_code")
@@ -31,7 +33,6 @@ class SaveFCMTokenAndAuthorize(APIView):
                 UserFCMToken.objects(user_code=user_code).update_one(
                         set__fcm_token=fcm_token, upsert=True
                 )
-                print("Token SAved")
             return Response({"message": "FCM token saved successfully!"},
                             status=201)
         except Exception as e:
@@ -58,7 +59,6 @@ class MarkNotificationAsReadView(APIView):
     def post(self, request, *args, **kwargs):
         notification_id = request.data.get("notification_id")
         user_code = request.data.get("user_code")
-        print(notification_id, user_code)
         if not notification_id or not user_code:
             return Response({"error": "Missing notification_id or user_code"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -70,7 +70,7 @@ class MarkNotificationAsReadView(APIView):
         except Notification.DoesNotExist:
             return Response({"error": "Notification not found"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            print('Error', e)
+            logger.exception('Error', extra={'data': str(e)})
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     

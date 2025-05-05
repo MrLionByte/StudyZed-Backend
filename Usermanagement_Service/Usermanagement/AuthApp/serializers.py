@@ -1,4 +1,5 @@
 import redis
+import logging
 from AuthApp.models import UserAddon, Email_temporary
 from rest_framework import serializers
 from rest_framework.permissions import IsAuthenticated
@@ -21,17 +22,14 @@ redis_client = redis.StrictRedis(
     host=str(settings.REDIS_HOST), port=settings.REDIS_PORT, db=0, decode_responses=True
 )
 
+logger = logging.getLogger(__name__)
 
 class EmailVerificationSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
 
     def validate_email(self, value):
-        print("VAL :", value)
         if UserAddon.objects.filter(email=value).exists():
             raise serializers.ValidationError("Email already exists")
-        # redis_data = redis_client.hgetall(value)
-        # if redis_data.no_of_try > 5:
-        #     raise serializers.ValidationError("Exceeded number of tries for OTP.Try after 1 hour")
         return value
 
 
@@ -47,25 +45,15 @@ class OTPVerificationSerializer(serializers.Serializer):
             if user_under_verification.otp != otp:
                 raise serializers.ValidationError("OTP is incorrect")
             otp_expiry_time_str = user_under_verification.expires_at
-            print(type(otp_expiry_time_str))
-            print(type(user_under_verification.expires_at))
-            print(" ********************************")
             current_time = now()
-            print(current_time)
             if current_time > otp_expiry_time_str:
                 user_under_verification.delete()
-                print(
-                    "User under verification SER :",
-                    user_under_verification.expires_at,
-                    " NOW :",
-                    now(),
-                )
                 raise serializers.ValidationError(
-                    "OTp has expired. Please request a new one and try again."
+                    "Otp has expired. Please request a new one and try again."
                 )
             return attrs
         except Exception as e:
-            print("Error in OTP SERIALIZER :", e)
+            logger.exception("Error in OTP SERIALIZER :", extra={'data': str(e)})
 
 
 class PasswordResetSerializer(serializers.Serializer):
@@ -98,9 +86,7 @@ class UserSerializer(serializers.ModelSerializer):
         extra_kwargs = {"password": {"write_only": True, "required": True}}
 
     def create(self, validated_data):
-        print("USER SERIALIZATION", validated_data)
         user = UserAddon.objects.create_user(**validated_data)
-        print("USER", user)
         return user
 
     def update(self, instance, validated_data):
@@ -148,12 +134,10 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
     @classmethod
     def get_token(cls, user):
-        print("TOKEN MODIFY WORKING", user)
         token = super().get_token(user)
         token["role"] = user.role
         token["email"] = user.email
         token["user_code"] = user.user_code
-        print("TOKEN :", token)
         return token
 
 

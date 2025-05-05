@@ -1,7 +1,8 @@
 from aiortc import RTCPeerConnection, RTCSessionDescription
 import json
+import logging
 
-
+logger = logging.getLogger(__name__)
 pcs = set()
 
 async def websocket_handler(request):
@@ -36,7 +37,7 @@ async def websocket_handler(request):
                 await pc.addIceCandidate(candidate)
                 
         elif msg.type == web.WSMsgType.ERROR:
-            print(f'WebSocket connection closed with exception {ws.exception()}')
+            logger.error(f'WebSocket connection closed with exception {ws.exception()}')
 
     pcs.discard(pc)
     return ws

@@ -13,23 +13,17 @@ class TutorAccessPermission(permissions.BasePermission):
 
     def has_permission(self, request, view):
         token = request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]
-        print("TOKEN IN permission :",token)
         secret_key = settings.JWT_SECRET_KEY
-        print("Secret_key :",secret_key)
         try:
             decoded_payload = jwt.decode(token, secret_key, algorithms=["HS256"])
             if decoded_payload.get("role") == "TUTOR":
-                print("TUTOR")
                 return True
             else:
-                print("NOT TUTOR")
                 raise AuthenticationFailed("Permission denied, not a tutor.")
         except ExpiredSignatureError:
-            print("Expired")
             self.message = "Token has expired."
             raise AuthenticationFailed(detail="Token has expired.", code=401)
         except InvalidTokenError:
-            print("Signature Error")
             self.message = "Invalid token."
             raise AuthenticationFailed(detail="Invalid token.", code=401)
 
@@ -39,23 +33,17 @@ class StudentAccessPermission(permissions.BasePermission):
 
     def has_permission(self, request, view):
         token = request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]
-        print("TOKEN IN permission :",token)
         secret_key = settings.JWT_SECRET_KEY
-        print("Secret_key :",secret_key)
         try:
             decoded_payload = jwt.decode(token, secret_key, algorithms=["HS256"])
             if decoded_payload.get("role") == "STUDENT":
-                print("STUDENT")
                 return True
             else:
-                print("NOT STUDENT", decoded_payload)
                 raise AuthenticationFailed("Permission denied, not a student.")
         except ExpiredSignatureError:
-            print("Expired")
             self.message = "Token has expired."
             raise AuthenticationFailed(detail="Token has expired.", code=401)
         except InvalidTokenError:
-            print("Signature Error")
             self.message = "Invalid token."
             raise AuthenticationFailed(detail="Invalid token.", code=401)
 
@@ -65,22 +53,16 @@ class TutorAccessPermission(permissions.BasePermission):
 
     def has_permission(self, request, view):
         token = request.META.get('HTTP_AUTHORIZATION', " ").split(' ')[1]
-        print("TOKEN IN permission :",token)
         secret_key = settings.JWT_SECRET_KEY
-        print("Secret_key :",secret_key)
         try:
             decoded_payload = jwt.decode(token, secret_key, algorithms=["HS256"])
             if decoded_payload.get("role") == "TUTOR":
-                print("TUTOR")
                 return True
             else:
-                print("NOT TUTOR")
                 raise AuthenticationFailed("Permission denied, not a tutor.")
         except ExpiredSignatureError:
-            print("Expired")
             self.message = "Token has expired."
             raise AuthenticationFailed(detail="Token has expired.", code=401)
         except InvalidTokenError:
-            print("Signature Error")
             self.message = "Invalid token."
             raise AuthenticationFailed(detail="Invalid token.", code=401)

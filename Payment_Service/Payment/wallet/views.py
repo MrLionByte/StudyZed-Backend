@@ -1,3 +1,4 @@
+import logging
 from django.shortcuts import render
 from .models import Wallet, WalletTransactions
 from rest_framework import generics, status, pagination
@@ -17,7 +18,7 @@ from .jwt_utils import decode_jwt_token
 
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
-
+logger = logging.getLogger(__name__)
 # Create your views here.
 
 # COMMON USAGE {
@@ -92,14 +93,11 @@ class TutorWalletView(generics.RetrieveAPIView):
 #  }
 
 
-# print jwt token
 class StripeWalletTransactionView(APIView):
     permission_classes = [AllowAny]
     
     def post(self, request):
         try:
-            print("REQUESt DAAT :",request.data)
-            print(type(request.data.get('amount')))
             account_no = request.data.get('account_number')
             user_code = request.data.get('user_code')
             url = request.data.get("url")
@@ -128,14 +126,13 @@ class StripeWalletTransactionView(APIView):
                     'currency': currency,
                 },
             )
-            print("AFTER SESSIOn :",checkout_transaction)
             
             return Response({
                 'checkout_url': checkout_transaction.url,
                 'transaction_id': checkout_transaction.id
                 }, status=status.HTTP_200_OK)
         except Exception as e:
-            print("ERROR", e)
+            logger.exception("Exception on transaction", extra={'data': str(e)})
             return Response({
                 "error": str(e),
                  }, status=status.HTTP_502_BAD_GATEWAY
@@ -145,24 +142,19 @@ class StripeWalletTransactionView(APIView):
 @csrf_exempt
 @require_POST
 def stripe_webhook_wallet(request):
-    print("STRIPE WORK 1")
     payload = request.body
     sig_header = request.META['HTTP_STRIPE_SIGNATURE']
     endpoint_secret = settings.STRIPE_WEBHOOK_SECRET_WALLET
 
-    print("STRIPE WORK 2", endpoint_secret)
     try:
-        
-        print("STRIPE WORK 3")
+
         event = stripe.Webhook.construct_event(
             payload, sig_header, endpoint_secret
         )
-        print("EVENT :",event)
+
         if event['type'] == 'checkout.session.completed':
             
-            print("STRIPE WORK 3")
             session = event['data']['object']
-            print("SESSion :" ,session)
             session_id = session['id']
             payment_intent = session.get('payment_intent')
 
@@ -182,21 +174,21 @@ def stripe_webhook_wallet(request):
                     currency=currency,
                     status="COMPLETED"
                 )
-                print(f"Payment successful: {payment_intent}")
+                logger.info(f"Payment successful: {payment_intent}")
 
             else:
-                print("Payment intent is not available.")
+                logger.warning("Payment intent is not available.")
 
         return JsonResponse({'status': 'success'}, status=200)
 
     except ValueError as e:
-        print("Invalid payload", e)
+        logger.error("Invalid payload", extra={'data': str(e)})
         return JsonResponse({'error': 'Invalid payload'}, status=400)
 
     except stripe.error.SignatureVerificationError as e:
-        print("Signature verification failed", e)
+        logger.error("Signature verification failed", extra={'data': str(e)})
         return JsonResponse({'error': 'Signature verification failed'}, status=400)
     
     except Exception as e:
-        print("Error processing webhook:", str(e))
+        logger.exception("Error processing webhook", extra={'data': str(e)})
         return JsonResponse({'error': str(e)}, status=400)

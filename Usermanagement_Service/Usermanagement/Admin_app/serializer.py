@@ -21,15 +21,12 @@ class AdminTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         username = self.context['request'].data.get('username')
         password = attrs.get("password")
-        print(username, password)
         try:
             user = UserAddon.objects.get(username=username)
             
             if not user.check_password(password):
-                print("password error")
                 raise serializers.ValidationError('Invalid password.')
             if not user.is_superuser:
-                print("not admin error")
                 raise serializers.ValidationError('User is not a admin.')
             attrs['user'] = user
             return super().validate(attrs)

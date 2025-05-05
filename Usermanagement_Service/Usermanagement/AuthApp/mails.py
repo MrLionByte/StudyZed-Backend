@@ -21,7 +21,6 @@ def send_verification_email(recipient_email):
 
 
 def send_forgot_password_email(recipient_email):
-    print(recipient_email)
     email_data = {
         "subject": "Password Reset - Study-Zed",
         "header": "Reset Your Password",
@@ -32,7 +31,6 @@ def send_forgot_password_email(recipient_email):
         # template_name="forgot_password.html",
         email_data=email_data,
     )
-    print("SEND :", send)
     return send
 
 
@@ -43,11 +41,9 @@ def resend_otp_verification_email(recipient_email):
         "header": "REsend OTP to Verify Email",
         "initial_otp": "Your new OTP code",
     }
-    print("  MAX  3  :", email_data)
     task = send_email_template(
         recipient=recipient_email, template_name="otp", email_data=email_data
     )
-    print("TASK :", task)
     return {
         "message": "Resend OTP verification process started",
         "task": task,

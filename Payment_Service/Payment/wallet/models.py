@@ -41,21 +41,17 @@ class WalletTransactions(models.Model):
     
     def _update_account_balance(self, *args, **kwargs):
         if self.transaction_type == "CREDIT":
-            print("CREDIT")
             self.wallet_key.balance+=Decimal(self.amount)
         elif self.transaction_type == "DEBIT":
-            print("DEBIT")
             if self.wallet_key.balance-self.amount < 0:
                 raise Exception (f"you don't have balance for that, current balance is {self.wallet_key.balance}")
             self.wallet_key.balance -= Decimal(self.amount)
-            print(self.wallet_key.balance)
     
     @transaction.atomic
     def save(self, *args, **kwargs):
         self._update_account_balance()
         super().save(*args, **kwargs)
         self.wallet_key.save()
-        print("AFTER SAVE" ,self.wallet_key.balance)
     
     def __str__(self):
         return f"{self.amount} as {self.transaction_type} for {self.wallet_key.user_code}"

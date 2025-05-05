@@ -1,4 +1,5 @@
 import jwt
+import logging
 from jwt import ExpiredSignatureError, InvalidTokenError
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
@@ -7,6 +8,7 @@ import os
 from Chat.jwt_decode import decode_jwt_token_for_chat
 
 SECRET_KEY = settings.JWT_SECRET_KEY
+logger = logging.getLogger(__name__)
 
 class JWTAuthentication:
     @sync_to_async
@@ -25,4 +27,4 @@ class JWTAuthentication:
             raise PermissionDenied("Invalid token")
         
         except Exception as e:
-            print("ERROR in JWT AUTHENTICATION", e)
+            logger.error("ERROR in JWT AUTHENTICATION", str*(e))

@@ -99,6 +99,35 @@ Core Backend Technologies
 
 ---
 
+## Sample Env
+**UserManagement**
+- SECRET_KEY='django secret'
+- DEBUG=True 'in development'
+- DB_NAME='db name'
+- POSTGRES_USER='db user'
+- POSTGRES_PASSWORD='db pasword'
+- DB_HOST='db host'
+- DB_PORT=5432 'default psql port'
+- ACCESS_TOKEN_LIFETIME=180 'for 3 hours'
+- REFRESH_TOKEN_LIFETIME=1 'for a day'
+- LOCATION='redis url'
+- BOOTSTRAP_SERVERS='servername : port'
+- REDIS_HOST='host name'
+- REDIS_PORT=6379 'default port'
+- CELERY_BROKER_URL='redis url'
+- CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP=True 'if needed'
+- CELERY_RESULT_BACKEND='redis url'
+- CELERY_RESULT_EXTENDED=True 'default'
+- ALLOWED_HOSTS= 'all allowed host headers' 
+- EMAIL_USE_TLS=True 'default'
+- EMAIL_PORT=587 'default'
+- EMAIL_HOST_USER='host email'
+- EMAIL_HOST_PASSWORD='host user email app password'
+- cloudinary_cloud_name='get from cloudinary'
+- cloudinary_api_key='get from cloudinary'
+- cloudinary_api_secret='get from cloudinary'
+- cloudinary_secure=True 'default'
+
 ## Contact
 
 For any queries or collaboration opportunities, reach out via [LinkedIn](www.linkedin.com/in/farhan-mahmood-n) or open an issue in the repository.

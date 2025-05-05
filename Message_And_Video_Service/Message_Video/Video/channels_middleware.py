@@ -35,14 +35,12 @@ class JWTForWebRTCMiddleware(BaseMiddleware):
             return await super().__call__(scope, receive, send)
 
         except (PermissionDenied, AuthenticationFailed):
-            print("ERROR in JWT MIDDLEWARE")
             await send({
                 "type": "websocket.close",
                 "code": 4002
             })
 
         except Exception as e:
-            print("ERROR as Exception :", e)
             await self.close_connection(send, 4004)
     
     async def close_connection(self, send, code, dummy=None):

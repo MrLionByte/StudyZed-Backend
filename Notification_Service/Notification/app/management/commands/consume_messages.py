@@ -46,7 +46,6 @@ class Command(BaseCommand):
             while True:
                 msg = consumer.poll(timeout=5.0)
                 if msg is None:
-                    print("No new messages")
                     logger.info("No new messages")
                     time.sleep(10)
                     continue
@@ -58,7 +57,6 @@ class Command(BaseCommand):
                         raise KafkaException(msg.error())
                 else:
                     message_value = json.loads(msg.value().decode("utf-8"))
-                    print(f"Received message from {msg.topic()}: {message_value}")
                     logger.info(f"Received message from {msg.topic()}: {message_value}")
 
                     if msg.topic() == "student_joined":
@@ -93,9 +91,7 @@ class Command(BaseCommand):
            
             if success:
                 notification.update(set__notified=True)
-                print(f"Notification sent handle_student_joined")
         except Exception as e:
-            print(f"Error at handle_student_joined : {str(e)}")
             logger.error(f"Error at handle_student_joined : {str(e)}")
 
 
@@ -116,10 +112,8 @@ class Command(BaseCommand):
                     processed_users.add(student)
                     if success:
                         notification.update(set__notified=True)
-                        print(f"Notification sent handle_daily_task : {student}")
-                    print("User added ", processed_users)
+                        
         except Exception as e:
-            print(f"Error at handle_daily_task : {str(e)}")
             logger.error(f"Error at handle_daily_task : {str(e)}")
 
 
@@ -134,9 +128,8 @@ class Command(BaseCommand):
             success = send_notification_for_user.apply(args=[message.get("tutor_code"), message.get("title"), message.get("message")])
             if success:
                 notification.update(set__notified=True)
-                print(f"Notification sent handle_attended_task")
+                
         except Exception as e:
-            print(f"Error at handle_attended_task : {str(e)}")
             logger.error(f"Error at handle_attended_task : {str(e)}")
             
 
@@ -155,9 +148,8 @@ class Command(BaseCommand):
                     processed_users.add(student)
                     if success:
                         notification.update(set__notified=True)
-                        print(f"Notification sent handle_assessment : {student}")
+            
         except Exception as e:
-            print(f"Error at handle_assessment : {str(e)}")
             logger.error(f"Error at handle_assessment : {str(e)}")
 
 
@@ -172,8 +164,7 @@ class Command(BaseCommand):
             success = send_notification_for_user.apply(args=[message.get("tutor_code"), message.get("title"), message.get("message")])
             if success:
                 notification.update(set__notified=True)
-                print(f"Notification sent handle_assessment_attended")
+            
         except Exception as e:
-            print(f"Error at handle_assessment_attended : {str(e)}")
             logger.error(f"Error at handle_assessment_attended : {str(e)}")
     

@@ -1,7 +1,9 @@
-
+import logging
 from mongoengine.errors import NotUniqueError
 from .models import User
 from mongoengine.queryset import Q
+
+logger = logging.getLogger(__name__)
 
 async def get_or_create_user(user_data):
     """
@@ -34,9 +36,9 @@ async def get_or_create_user(user_data):
         return user
 
     except NotUniqueError as e:
-        print(f"Error: User with user_id {user_id} already exists. Details: {e}")
+        logger.error(f"Error: User with user_id {user_id} already exists. Details: {e}")
         return None
 
     except Exception as e:
-        print("Unexpected error in user creation:", e)
+        logger.exception("Unexpected error in user creation:", e)
         return None

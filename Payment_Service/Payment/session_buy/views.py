@@ -1,3 +1,4 @@
+import logging
 from rest_framework.views import APIView
 import stripe
 from django.conf import settings
@@ -16,7 +17,8 @@ from decimal import Decimal
 from rest_framework.permissions import AllowAny
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
-# print jwt token
+logger = logging.getLogger(__name__)
+
 class StripeCheckoutView(APIView):
     permission_classes = [AllowAny]
     
@@ -56,7 +58,7 @@ class StripeCheckoutView(APIView):
                 'session_id': checkout_session.id
                 }, status=status.HTTP_200_OK)
         except Exception as e:
-            print("ERROR", e)
+            logger.error("ERROR", extra={'data': str(e)})
             return Response({
                 "error": str(e),
                  }, status=status.HTTP_502_BAD_GATEWAY
@@ -65,31 +67,23 @@ class StripeCheckoutView(APIView):
 
 class StripeWebHookView(APIView):
     def post(self, request):
-        print("Working StripeWebHook")
         return JsonResponse({"OK":"OK"})
 
   
 @csrf_exempt
 @require_POST
 def stripe_webhook(request):
-    print("STRIPE WORK 1")
     payload = request.body
     sig_header = request.META['HTTP_STRIPE_SIGNATURE']
     endpoint_secret = settings.STRIPE_WEBHOOK_SECRET_SESSION
 
-    print("STRIPE WORK 2", endpoint_secret)
-    try:
-        
-        print("STRIPE WORK 3")
+    try:       
         event = stripe.Webhook.construct_event(
             payload, sig_header, endpoint_secret
         )
 
         if event['type'] == 'checkout.session.completed':
-            
-            print("STRIPE WORK 3")
             session = event['data']['object']
-            print("SESSion :" ,session)
             session_id = session['id']
             payment_intent = session.get('payment_intent')
 
@@ -110,19 +104,17 @@ def stripe_webhook(request):
                     status="success",
                 )
 
-                print(f"Payment successful: {payment_intent}")
-
             else:
-                print("Payment intent is not available.")
+                logger.warning("Payment intent is not available.")
 
         return JsonResponse({'status': 'success'}, status=200)
 
     except ValueError as e:
-        print("Invalid payload")
+        logger.warning("Invalid payload")
         return JsonResponse({'error': 'Invalid payload'}, status=400)
 
     except stripe.error.SignatureVerificationError as e:
-        print("Signature verification failed")
+        logger.error("Signature verification failed", extra={'data': str(e)})
         return JsonResponse({'error': 'Signature verification failed'}, status=400)
     
     
@@ -131,7 +123,6 @@ class PayForSessionUsingWalletView(APIView):
     
     def post(self, request):
         try:
-            print("REQUESt DAAT :",request.data)
             session_name = request.data.get('session_name')
             tutor_code = request.data.get('tutor_code')
             session_code = request.data.get('session_code')
@@ -139,7 +130,7 @@ class PayForSessionUsingWalletView(APIView):
 
             
             wallet, created = Wallet.objects.get_or_create(user_code=tutor_code);
-            print(wallet, "::",amount, "::",wallet.balance)
+            
             if wallet.balance < amount:
                 return Response({
                 "payment-status": "insufficient-balance"
@@ -151,9 +142,8 @@ class PayForSessionUsingWalletView(APIView):
                 amount=amount,
                 status="Pending"
             )
-            print("SUB :",tutor_code, session_code)
+            
             session_key = Subscription.objects.get(session_code=session_code, tutor_code=tutor_code)
-            print("SES K :", session_key)
             subscription_payment = Payment.objects.create(
                     subscription_key=session_key,
                     amount=amount,
@@ -172,7 +162,7 @@ class PayForSessionUsingWalletView(APIView):
             }, status=status.HTTP_201_CREATED)
             
         except Exception as e:
-            print(e)
+            logger.exception("Error occured", extra={'data': str(e)})
             return Response({
                 "error": str(e),
                 "payment-status": "failed"
