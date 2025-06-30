@@ -7,6 +7,11 @@ WORKDIR /app
 COPY run.py requirements.txt requirements-dev.txt /app/
 RUN chmod +x /app/run.py && \
     pip install -r requirements.txt -r requirements-dev.txt
+
 COPY . /app
+
+RUN mkdir -p /app/logs
+
 EXPOSE 8005
-CMD ["python", "/app/run.py"]
+
+CMD ["bash", "-c", "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8005"]

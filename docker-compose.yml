@@ -43,7 +43,10 @@ services:
     build: 
       context: ./Payment_Service/Payment
       dockerfile: Dockerfile
-    command: python manage.py runserver 0.0.0.0:8000 
+    command: >
+      bash -c "python manage.py migrate &&
+              gunicorn Payment.wsgi:application --bind 0.0.0.0:8000 &&
+              python manage.py consume_messages"
     ports:
       - "8008:8000"
     depends_on:
@@ -64,6 +67,7 @@ services:
       - "8006:8000"
     volumes:
       - ./Message_And_Video_Service/Message_Video:/app
+      
 
   notification_management:
     container_name: notification_management
@@ -98,7 +102,7 @@ services:
       - KAFKA_BROKER_ID=1
       - KAFKA_LISTENERS=PLAINTEXT://:9092
       - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
-      - KAFKA_ZOOKEEPER_CONNECT=zookeeper-0.zookeeper.studyzed.svc.cluster.local:2181
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
       - ALLOW_PLAINTEXT_LISTENER=yes
       - KAFKA_LOG4J_OPTS=-Dlog4j.rootLogger=OFF
     depends_on:

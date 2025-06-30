@@ -1,5 +1,6 @@
 import os
 import smtplib
+import logging
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from jinja2 import Template
@@ -8,13 +9,14 @@ from celery import shared_task
 from django.core.mail import send_mail
 from .tasks import generate_otp
 
+logger = logging.getLogger(__name__)
+
 
 def send_email_template(recipient, template_name, email_data):
     smtp_server = settings.EMAIL_HOST
     smtp_port = settings.EMAIL_PORT
     sender_email = settings.EMAIL_HOST_USER
     sender_password = settings.EMAIL_HOST_PASSWORD
-    print("AT MAIL :", type(recipient))
     OTP, created_at, expires_at = generate_otp(email=recipient)
     email_data["otp"] = OTP
 
@@ -47,7 +49,6 @@ def send_email_template(recipient, template_name, email_data):
             "expires_at": expires_at,
         }
     except Exception as e:
-        print(f"EMAIL UTIL Error details: {e}")
         return {"success": False, "message": f"Failed to send email: {str(e)}"}
 
 
@@ -77,8 +78,5 @@ def send_direct_email(recipient, email_data):
             "expires_at": expires_at,
         }
     except Exception as e:
-        print(f"EMAIL UTIL Error details: {e}")
-        # return {
-        #     "success": False,
-        #     "message": f"Failed to send email: {str(e)}"
-        #         }
+        logger.error(f"EMAIL UTIL Error details: {e}")
+

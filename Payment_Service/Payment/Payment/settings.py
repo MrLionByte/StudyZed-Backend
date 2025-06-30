@@ -27,14 +27,13 @@ load_dotenv(dotenv_path=env_path)
 SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("DEBUG")
+DEBUG = os.getenv("DEBUG", "False").lower() in ("true", "1", "yes")
+
 
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
 
-# CORS
 
 # Application definition
-
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -50,8 +49,6 @@ INSTALLED_APPS = [
     "price_setter",
     
     "corsheaders",
-    
-    
 ]
 
 
@@ -64,6 +61,7 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "admin_app.middleware.NormalizeHostMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -182,8 +180,16 @@ LOGGING = {
             "formatter": "verbose",
         },
     },
+    'loggers': {
+        '': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
+    },
     "root": {
         "handlers": ["console", "file"],
         "level": "DEBUG",
     },
 }
+
+SESSION_DELETE_SECRET = "(pqtxuu)_w#d%%lqo=t7johrx4++_cs!yiyc_xz136w!umh48i"

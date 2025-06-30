@@ -19,16 +19,14 @@ from .jwt_utils import decode_jwt_token
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 logger = logging.getLogger(__name__)
+
 # Create your views here.
 
-# COMMON USAGE {
 
 class WalletTransactionPagination(pagination.PageNumberPagination):
     page_size = 9
     page_size_query_param = 'page_size'
     max_page_size = 45
-
-# }
 
 
 # STUDENT {
@@ -73,7 +71,7 @@ class TutorWalletView(generics.RetrieveAPIView):
     def get(self, request, *args, **kwargs):
         user_data = decode_jwt_token(self.request)
         user_code = user_data.get("user_code")
-        wallet = get_object_or_404(Wallet, user_code=user_code)
+        wallet, created = Wallet.objects.get_or_create(user_code=user_code)
         
         wallet_transactions = WalletTransactions.objects.filter(
             wallet_key=wallet).order_by('-transaction_date')
@@ -103,7 +101,7 @@ class StripeWalletTransactionView(APIView):
             url = request.data.get("url")
             amount = int(request.data.get('amount'))*100  # Amount in cents (e.g., $10 = 1000)
             currency = request.data.get('currency', 'inr')
-
+            print(f"Adding money to wallet taking place. Account No {account_no}, User Code {user_code}, url :{url}, Amount: {amount}")
             checkout_transaction = stripe.checkout.Session.create(
                 line_items=[
                     {
@@ -126,7 +124,7 @@ class StripeWalletTransactionView(APIView):
                     'currency': currency,
                 },
             )
-            
+            print(f"Checkout Transaction : {checkout_transaction}")
             return Response({
                 'checkout_url': checkout_transaction.url,
                 'transaction_id': checkout_transaction.id
@@ -146,11 +144,13 @@ def stripe_webhook_wallet(request):
     sig_header = request.META['HTTP_STRIPE_SIGNATURE']
     endpoint_secret = settings.STRIPE_WEBHOOK_SECRET_WALLET
 
+    print(f"Stripe Webhook Wallet Payload: {payload}, sig_header: {sig_header}, endpoint_secret {endpoint_secret}")
     try:
 
         event = stripe.Webhook.construct_event(
             payload, sig_header, endpoint_secret
         )
+        print("Stripe Checkout Session ", event)
 
         if event['type'] == 'checkout.session.completed':
             

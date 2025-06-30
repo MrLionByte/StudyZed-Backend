@@ -210,6 +210,9 @@ spec:
       name: redis-data
     spec:
       accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 512Mi
 
 ---
 apiVersion: v1
@@ -266,6 +269,9 @@ spec:
       name: zookeeper-data
     spec:
       accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 512Mi
 
 ---
 apiVersion: v1
@@ -338,6 +344,9 @@ spec:
       name: kafka-data
     spec:
       accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 512Mi
 
 ---
 apiVersion: v1

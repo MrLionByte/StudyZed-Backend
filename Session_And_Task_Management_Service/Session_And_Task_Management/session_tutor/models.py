@@ -22,7 +22,7 @@ class Session(models.Model):
     session_code = models.CharField(max_length=150, unique=True, editable=False)
     is_paid = models.BooleanField(default=False)
     is_active = models.BooleanField(default=False)
-    # auto_signin = models.BooleanField(default=False)
+    is_rejected = models.BooleanField(default=False)
     image = models.ImageField(
         _("Session Card Picture"),
         upload_to="uploads/session/",

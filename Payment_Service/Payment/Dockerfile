@@ -10,10 +10,15 @@ WORKDIR /app
 COPY run.py requirements.txt /app/
 
 RUN chmod +x /app/run.py && \
-    pip install -r requirements.txt 
+    pip install -r requirements.txt
 
 COPY . /app
 
-EXPOSE 8000
+COPY start.sh /start.sh
+RUN chmod +x /start.sh
 
-CMD ["bash", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:8008 & python manage.py consume_messages"]
+RUN mkdir -p /app/logs
+
+EXPOSE 8008
+
+CMD ["/start.sh"]

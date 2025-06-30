@@ -16,6 +16,8 @@ RUN chmod +x /app/run.py && \
 
 COPY . /app
 
+RUN mkdir -p /app/logs
+
 EXPOSE 8007
 
 CMD ["bash", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:8007 & python manage.py consume_messages"]

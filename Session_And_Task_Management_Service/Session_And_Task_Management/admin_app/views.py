@@ -1,4 +1,8 @@
 import logging
+import requests
+from django.conf import settings
+from django.db import transaction
+
 from django.shortcuts import render
 from rest_framework import generics, exceptions, status
 from rest_framework.response import Response
@@ -19,13 +23,12 @@ from assessment_tutor_side.models import Assessments
 logger = logging.getLogger(__name__)
 
 class AllSessionToApproveView(generics.ListAPIView):
-    queryset = Session.objects.filter(is_active=False)
+    queryset = Session.objects.filter(is_active=False, is_rejected=False)
     serializer_class = SeeSessionToApproveSerializers
 
 
 class ApproveSessionView(generics.UpdateAPIView):
     queryset = Session.objects.all()
-    # serializer_class = ApproveSessionSerializer
 
     def update(self, request, *args, **kwargs):
         session = self.get_object()
@@ -35,6 +38,40 @@ class ApproveSessionView(generics.UpdateAPIView):
         return Response(
             {
                 "message": f"Successfully approved session {session.session_name}",
+            },
+            status=status.HTTP_202_ACCEPTED,
+        )
+
+
+class RejectSessionView(generics.UpdateAPIView):
+    queryset = Session.objects.all()
+
+    def update(self, request, *args, **kwargs):
+        session = self.get_object()
+        
+        with transaction.atomic():
+            session.is_rejected = True
+            session.start_date = now() + relativedelta(days=+1)
+            session.save()
+        
+            payload = {
+                "session_code": session.session_code,
+                "tutor_code": session.tutor_code
+            }
+        
+            try:
+                payment_service_url = "http://payment_management:8000/payment-admin/refund-session/"
+                
+                response = requests.post(payment_service_url, json=payload, timeout=10)
+                print("Payment Service Response all :", response)
+                print("Payment Service Response:", response.status_code, response.json())
+            except Exception as e:
+                print("Failed to contact Payment Service:", str(e))
+
+        
+        return Response(
+            {
+                "message": f"Successfully rejected session {session.session_name}",
             },
             status=status.HTTP_202_ACCEPTED,
         )

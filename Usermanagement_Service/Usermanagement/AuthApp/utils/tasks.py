@@ -29,7 +29,6 @@ redis_client = redis.StrictRedis(
 #     return send_email_template(recipient_email, 'otp', email_data)
 
 def generate_otp(email, length=6):
-    print("GEN OTP EMAIL:", type(email))
     otp = "".join(random.choices(string.digits, k=length))
     created_at = datetime.now()
     expires_at = created_at + timedelta(minutes=5)

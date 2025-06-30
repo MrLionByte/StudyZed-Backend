@@ -3,6 +3,14 @@ import sys
 
 def main():
     try:
+        print("Running make migrations...")
+        subprocess.run(
+            ["python", "manage.py", "makemigrations"],
+            check=True,
+            capture_output=True,
+            text=True
+        )
+        
         # Run migrations
         print("Running migrations...")
         subprocess.run(

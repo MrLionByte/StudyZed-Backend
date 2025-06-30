@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.conf import settings
 from rest_framework import generics
 from rest_framework_simplejwt import authentication
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -80,6 +81,24 @@ class CreateSessionView(generics.CreateAPIView):
             )
 
 
+class DeleteSessionView(APIView):
+    permission_classes = [TutorAccessPermission]
+    
+    def delete(self, request):
+        session_code = request.data.get('session_code')
+        user_data = decode_jwt_token(self.request)
+        tutor_code = user_data.get("user_code")
+        
+        deleted, _ = Session.objects.filter(
+            session_code=session_code,
+            tutor_code=tutor_code
+            ).delete()
+        
+        if deleted:
+            return Response({"message": "Session deleted."}, status=status.HTTP_200_OK)
+        return Response({"error": "Session not found."}, status=status.HTTP_404_NOT_FOUND)
+
+
 class RenewSessionSubscription(generics.UpdateAPIView):
     serializer_class = UpdateSessionSerializer
     permission_classes = [TutorAccessPermission]
@@ -98,7 +117,7 @@ class RenewSessionSubscription(generics.UpdateAPIView):
             
 class GetSessionView(generics.RetrieveAPIView):
     serializer_class = CreateSessionSerializers
-    queryset = Session.objects.all()
+    queryset = Session.objects.filter(is_rejected=False)
     permission_classes = [TutorAccessPermission]
     # pagination_class = ""
 
@@ -114,7 +133,9 @@ class TutorsSessionsView(generics.ListAPIView):
             raise ValidationError("tutor_code query parameter is required.")
 
         try:
-            return Session.objects.filter(tutor_code=tutor_code).order_by('created_at')
+            return Session.objects.filter(
+                tutor_code=tutor_code,is_rejected=False
+                ).order_by('created_at')
         except Exception as e:
             logger.error(f"Error fetching sessions: {e}")
             raise ValidationError("An error occurred while fetching sessions.")
@@ -238,3 +259,5 @@ class UpdateSessionViews(generics.UpdateAPIView):
         except Session.DoesNotExist:
             logger.error("Session not found.")
             return Response({"error": "Session not found"}, status=404)
+        
+        

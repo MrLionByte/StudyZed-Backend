@@ -20,6 +20,7 @@ class StudentEnterSessionView(generics.CreateAPIView):
     permission_classes = [StudentAccessPermission]
     queryset = StudentsInSession.objects.all()
     serializer_class = EnterSessionSerializer
+    
 
 class StudentSessionView(generics.ListAPIView):
     serializer_class = StudentSessionSerializer
@@ -31,7 +32,9 @@ class StudentSessionView(generics.ListAPIView):
             logger.error("student_code query parameter is missing.")
             raise ValidationError("student_code query parameter is required.")
         
-        return StudentsInSession.objects.filter(student_code=student_code)
+        return StudentsInSession.objects.filter(
+            student_code=student_code,is_rejected=False)
+        
     
 class MyBatchMatesInSessionView(views.APIView):
     permission_classes = [AllowAny]

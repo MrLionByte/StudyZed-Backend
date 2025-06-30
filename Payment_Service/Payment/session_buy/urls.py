@@ -7,5 +7,7 @@ urlpatterns = [
     path('stripe-webhook/', stripe_webhook, name='stripe_webhook'),
     
     path('pay-using-wallet/', PayForSessionUsingWalletView.as_view()),
+    
+    path('subscription-delete/', DeleteSubscriptionView.as_view()),
 
 ]

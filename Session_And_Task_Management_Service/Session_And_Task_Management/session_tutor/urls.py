@@ -13,5 +13,7 @@ urlpatterns = [
     path('approve-student-to-session/<int:pk>/', ApproveStudentToSessionView.as_view()),
     
     path('students-in-session/', StudentsDataInSessionView.as_view()),
-    
+
+    path("delete/", DeleteSessionView.as_view()),
+
 ]
