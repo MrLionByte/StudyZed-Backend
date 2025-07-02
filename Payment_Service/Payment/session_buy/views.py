@@ -5,10 +5,12 @@ import stripe
 from django.conf import settings
 from rest_framework.response import Response
 from rest_framework import status
+from django.db import transaction
 from .models import Payment
 from django.shortcuts import redirect,get_object_or_404
 import uuid
 from .models import Subscription, Payment
+from wallet.models import Wallet, WalletTransactions
 from .utils.jwt_utils import decode_jwt_token
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -16,10 +18,10 @@ from django.views.decorators.http import require_POST
 from django.conf import settings
 from wallet.models import WalletTransactions, Wallet
 from decimal import Decimal
+from django.db.models import F
 from rest_framework.permissions import AllowAny
 from wallet.permissions import TutorAccessPermission
 from .serializers import PaymentSerializer
-from decimal import Decimal 
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 logger = logging.getLogger(__name__)
@@ -56,6 +58,7 @@ class StripeCheckoutView(APIView):
                 success_url=f"{settings.SITE_URL}/tutor/payment-success/",
                 cancel_url=f"{settings.SITE_URL}/tutor/payment-cancel?session_code={encoded_session_code}",
                 metadata={
+                    'type': 'session',
                     'user_id': request.user.id,
                     'session_name': session_name,
                     'tutor_code': tutor_code,
@@ -73,98 +76,136 @@ class StripeCheckoutView(APIView):
                 "error": str(e),
                  }, status=status.HTTP_502_BAD_GATEWAY
             )
-
-
-class StripeWebHookView(APIView):
-    def post(self, request):
-        return JsonResponse({"OK":"OK"})
-
+            
   
 @csrf_exempt
 @require_POST
 def stripe_webhook(request):
     payload = request.body
-    sig_header = request.META['HTTP_STRIPE_SIGNATURE']
-    endpoint_secret = settings.STRIPE_WEBHOOK_SECRET_SESSION
+    sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
 
-    try:       
+    try:
         event = stripe.Webhook.construct_event(
-            payload, sig_header, endpoint_secret
+            payload, sig_header, settings.STRIPE_WEBHOOK_SECRET_SESSION
         )
+    except stripe.error.SignatureVerificationError:
+        try:
+            event = stripe.Webhook.construct_event(
+                payload, sig_header, settings.STRIPE_WEBHOOK_SECRET_WALLET
+            )
+        except Exception as e:
+            logger.error("Stripe signature verification failed for both secrets", extra={"data": str(e)})
+            return JsonResponse({'error': 'Signature verification failed'}, status=400)
 
-        if event['type'] == 'checkout.session.completed':
-            print("Payment Working Fine")
+    try:
+        event_type = event['type']
+
+        if event_type == 'checkout.session.completed':
             session = event['data']['object']
-            session_id = session['id']
-            payment_intent = session.get('payment_intent')
+            metadata = session.get('metadata', {})
+            payment_intent_id = session.get('payment_intent')
+            amount = session.get('amount_total', 0) / 100  # Stripe sends amount in cents
 
-            if payment_intent:
-                payment = stripe.PaymentIntent.retrieve(payment_intent)
+            if payment_intent_id:
+                payment_intent = stripe.PaymentIntent.retrieve(payment_intent_id)
 
-                tutor_code = session.get('metadata', {}).get('user_code') or session.get('metadata', {}).get('tutor_code')
+            if metadata.get('type') == 'wallet':
+                user_code = metadata.get('user_code')
+                currency = metadata.get('currency', 'INR')
 
-                session_code = session['metadata']['session_code']
-                amount = session['amount_total'] / 100  # Convert from cents to dollars
+                try:
+                    with transaction.atomic():
+                        wallet = Wallet.objects.select_for_update().get(user_code=user_code)
+                        WalletTransactions.objects.create(
+                            wallet_key=wallet,
+                            transaction_type="CREDIT",
+                            amount=Decimal(amount),
+                            transaction_id=session['id'],
+                            currency=currency,
+                            status="COMPLETED"
+                        )
 
-                session_key = Subscription.objects.get(session_code=session_code, tutor_code=tutor_code)
+                        wallet.balance = F('balance') + Decimal(amount)
+                        wallet.save()
+                        
+                    logger.info(f"Wallet top-up successful: {payment_intent_id}")
 
-                Payment.objects.create(
-                    subscription_key=session_key,
-                    amount=amount,
-                    transaction_id=payment_intent,
-                    status="success",
-                )
+                except Wallet.DoesNotExist:
+                    logger.error(f"Wallet not found for user_code: {user_code}")
+                    return JsonResponse({'error': 'Wallet not found'}, status=404)
 
-            else:
-                logger.warning("Payment intent is not available.")
+            elif metadata.get('type') == 'session':
+                tutor_code = metadata.get('tutor_code')
+                session_code = metadata.get('session_code')
 
-        if event['type'] in ['checkout.session.expired', 'checkout.session.async_payment_failed']:
-            deleted=Subscription.objects.filter(session_code=session_code, tutor_code=tutor_code).delete()
-            print(f'Stripe Failed : {deleted}')
-            try:
-                delete_url = f"{SESSION_SERVICE_URL}{session_code}/"
-                print(f'Deleted url : {delete_url}')
-                headers = {
-                    "X-Delete-Secret": settings.SESSION_DELETE_SECRET
-                }
-                response = requests.delete(delete_url, headers=headers, timeout=5)
-                response.raise_for_status()
-                print('Delete output ', response)
-                logger.info(f"Session {session_code} deleted from Session Service")
-            except Exception as e:
-                logger.error(f"Failed to delete session {session_code} from Session Service: {str(e)}")
+                try:
+                    session_key = Subscription.objects.get(session_code=session_code, tutor_code=tutor_code)
+
+                    Payment.objects.create(
+                        subscription_key=session_key,
+                        amount=Decimal(amount),
+                        transaction_id=payment_intent_id,
+                        status="success",
+                    )
+
+                    logger.info(f"Session payment successful: {payment_intent_id}")
+
+                except Subscription.DoesNotExist:
+                    logger.error(f"Subscription not found for session_code: {session_code}")
+                    return JsonResponse({'error': 'Subscription not found'}, status=404)
+
+        elif event_type in ['checkout.session.expired', 'checkout.session.async_payment_failed']:
+            metadata = event['data']['object'].get('metadata', {})
+            if metadata.get("type") == "session":
+                tutor_code = metadata.get("tutor_code")
+                session_code = metadata.get("session_code")
+
+                Subscription.objects.filter(session_code=session_code, tutor_code=tutor_code).delete()
+
+                try:
+                    delete_url = f"{settings.SESSION_SERVICE_URL}{session_code}/"
+                    headers = {"X-Delete-Secret": settings.SESSION_DELETE_SECRET}
+                    requests.delete(delete_url, headers=headers, timeout=5)
+                    logger.info(f"Deleted session on failure: {session_code}")
+                except Exception as e:
+                    logger.error(f"Failed to delete session: {str(e)}")
 
         return JsonResponse({'status': 'success'}, status=200)
 
-    except ValueError as e:
-        logger.warning("Invalid payload")
-        return JsonResponse({'error': 'Invalid payload'}, status=400)
-
-    except stripe.error.SignatureVerificationError as e:
-        logger.error("Signature verification failed", extra={'data': str(e)})
-        return JsonResponse({'error': 'Signature verification failed'}, status=400)
+    except Exception as e:
+        logger.exception("Unhandled Stripe webhook error", extra={"data": str(e)})
+        return JsonResponse({'error': str(e)}, status=400)
     
     
 class PayForSessionUsingWalletView(APIView):
     permission_classes = [TutorAccessPermission]
     
+    @transaction.atomic
     def post(self, request):
         try:
             session_name = request.data.get('session_name')
             tutor_code = request.data.get('tutor_code')
             session_code = request.data.get('session_code')
-            amount = int(request.data.get('amount'))
+            amount = Decimal(str(request.data.get('amount')))
 
-            wallet, created = Wallet.objects.get_or_create(user_code=tutor_code);
+            subscription_instance = get_object_or_404(
+                Subscription, session_code=session_code, tutor_code=tutor_code
+                )
+
+            wallet, _ = Wallet.objects.get_or_create(user_code=tutor_code);
             
             if wallet.balance < amount:
-                logger.warning(f"Insufficient balance for tutor {tutor_code} to pay for session {session_code}. Required: {amount}, Available: {wallet.balance}")
-                return Response({
-                "payment-status": "insufficient-balance"
-            }, status=status.HTTP_402_PAYMENT_REQUIRED)
+                logger.warning(
+                    f"Insufficient balance for tutor {tutor_code}. Required: {amount}, Available: {wallet.balance}"
+                )
+                return Response(
+                    {"payment-status": "insufficient-balance"},
+                    status=status.HTTP_402_PAYMENT_REQUIRED,
+                )
             
-            subscription_instance = get_object_or_404(Subscription, session_code=session_code, tutor_code=tutor_code)
-
+            wallet.balance -= amount
+            wallet.save()
+            
             wallet_transaction = WalletTransactions.objects.create(
                 wallet_key=wallet,
                 transaction_type="DEBIT",
@@ -179,12 +220,6 @@ class PayForSessionUsingWalletView(APIView):
                     transaction_id=wallet_transaction.wallet_transaction_id
                 )
             
-            if subscription_payment.status == 'success':
-                wallet_transaction.status = "Completed"
-            elif subscription_payment.status == 'failed':
-                wallet_transaction.status = "Failed"
-            wallet_transaction.save()
-            
             serialized_payment_data = PaymentSerializer(subscription_payment).data
 
             return Response({
@@ -193,12 +228,11 @@ class PayForSessionUsingWalletView(APIView):
             }, status=status.HTTP_201_CREATED)
             
         except Exception as e:
-            logger.exception("Error occured", extra={'data': str(e)})
+            logger.exception("Payment failed", extra={'data': str(e)})
             return Response({
                 "error": str(e),
                 "payment-status": "failed"
-                } 
-            ,status=status.HTTP_400_BAD_REQUEST)
+            }, status=status.HTTP_400_BAD_REQUEST)
 
 
 class DeleteSubscriptionView(APIView):
@@ -213,7 +247,6 @@ class DeleteSubscriptionView(APIView):
             session_code=session_code,
             tutor_code=tutor_code
             ).delete()
-        print("In deletion :",deleted)
         
         if deleted:
             return Response({"message": "Subscription deleted."}, status=status.HTTP_200_OK)

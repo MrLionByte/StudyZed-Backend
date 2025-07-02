@@ -10,8 +10,12 @@ RUN chmod +x /app/run.py && \
 
 COPY . /app
 
+COPY start.sh /start.sh
+RUN chmod +x /start.sh
+
 RUN mkdir -p /app/logs
 
 EXPOSE 8005
 
-CMD ["bash", "-c", "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8005"]
+# CMD ["bash", "-c", "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8005"]
+CMD ["/start.sh"]

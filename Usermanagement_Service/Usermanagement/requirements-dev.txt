@@ -12,3 +12,4 @@ tomlkit==0.13.2
 pylint-django==2.6.1 
 pylint-plugin-utils==0.8.2
 black==25.1.0
+gunicorn==23.0.0

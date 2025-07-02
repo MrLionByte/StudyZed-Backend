@@ -16,7 +16,8 @@ spec:
       containers:
       - name: celery-worker
         # image: mrlionbyte/usermanagement-celery_worker:v1.4.1.6
-        image: mrlionbyte/usermanagement-celery_worker:v1.4.2.2
+        # image: mrlionbyte/usermanagement-celery_worker:v1.4.2.2
+        image: mrlionbyte/usermanagement-celery_worker:v1.5.0.2
         command: ["celery", "-A", "Usermanagement", "worker", "--loglevel=debug"]
         env:
         - name: CELERY_BROKER_URL

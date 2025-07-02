@@ -101,7 +101,6 @@ class StripeWalletTransactionView(APIView):
             url = request.data.get("url")
             amount = int(request.data.get('amount'))*100  # Amount in cents (e.g., $10 = 1000)
             currency = request.data.get('currency', 'inr')
-            print(f"Adding money to wallet taking place. Account No {account_no}, User Code {user_code}, url :{url}, Amount: {amount}")
             checkout_transaction = stripe.checkout.Session.create(
                 line_items=[
                     {
@@ -119,12 +118,13 @@ class StripeWalletTransactionView(APIView):
                 success_url=f"{url}?transaction_id={user_code}&status=success",
                 cancel_url=f"{url}?transaction_id={user_code}&status=cancel",
                 metadata={
+                    'type': 'wallet',
                     'account_no': account_no,
                     'user_code': user_code,
                     'currency': currency,
                 },
             )
-            print(f"Checkout Transaction : {checkout_transaction}")
+            
             return Response({
                 'checkout_url': checkout_transaction.url,
                 'transaction_id': checkout_transaction.id
@@ -144,14 +144,12 @@ def stripe_webhook_wallet(request):
     sig_header = request.META['HTTP_STRIPE_SIGNATURE']
     endpoint_secret = settings.STRIPE_WEBHOOK_SECRET_WALLET
 
-    print(f"Stripe Webhook Wallet Payload: {payload}, sig_header: {sig_header}, endpoint_secret {endpoint_secret}")
     try:
 
         event = stripe.Webhook.construct_event(
             payload, sig_header, endpoint_secret
         )
-        print("Stripe Checkout Session ", event)
-
+    
         if event['type'] == 'checkout.session.completed':
             
             session = event['data']['object']

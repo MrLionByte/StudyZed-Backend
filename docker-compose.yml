@@ -16,7 +16,7 @@ services:
     build: 
       context: ./Session_And_Task_Management_Service/Session_And_Task_Management
       dockerfile: Dockerfile
-    command: python manage.py runserver 0.0.0.0:8000
+    command: python manage.py runserver 0.0.0.0:8000 
     ports:
       - "8009:8000"
     depends_on:

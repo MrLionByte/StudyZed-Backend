@@ -17,7 +17,11 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: usermanagement
-    command: python manage.py runserver 0.0.0.0:8000
+    # command: python manage.py runserver 0.0.0.0:8000
+    command: >
+      sh -c "python manage.py migrate &&
+              gunicorn Usermanagement.wsgi:application --bind 0.0.0.0:8000"
+    
     volumes:
       - .:/app
     ports:

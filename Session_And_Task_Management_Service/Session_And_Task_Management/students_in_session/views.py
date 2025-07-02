@@ -33,7 +33,7 @@ class StudentSessionView(generics.ListAPIView):
             raise ValidationError("student_code query parameter is required.")
         
         return StudentsInSession.objects.filter(
-            student_code=student_code,is_rejected=False)
+            student_code=student_code,session__is_rejected=False)
         
     
 class MyBatchMatesInSessionView(views.APIView):

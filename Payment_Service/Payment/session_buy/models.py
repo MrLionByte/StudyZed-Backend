@@ -25,7 +25,6 @@ class Subscription(models.Model):
     
     
     def save(self, *args, **kwargs):
-        print("CRAETED AT :", self.created_at)
         if isinstance(self.created_at, str):
             self.created_at = datetime.strptime(self.created_at, "%Y-%m-%d").date()
         if not self.expiry_time:

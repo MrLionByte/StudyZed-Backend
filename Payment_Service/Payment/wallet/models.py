@@ -19,7 +19,8 @@ class Wallet(models.Model):
     is_blocked = models.BooleanField(default=False)
     created_at = models.DateField(auto_now_add=True)
     updated_at = models.DateField(auto_now=True)
-    # added
+    
+    # new to implement
     auto_credit = models.BooleanField(default=False) #Receive +
     auto_debit = models.BooleanField(default=False) #Withdraw -
     
@@ -27,31 +28,33 @@ class Wallet(models.Model):
         return f"{self.user_code} ACC.NO : {self.account_number}"
     
 class WalletTransactions(models.Model):
-    wallet_transaction_id = models.CharField(max_length=100, default=uuid.uuid4, editable=False, unique=True)
+    wallet_transaction_id = models.CharField(
+        max_length=100, default=uuid.uuid4, editable=False, unique=True
+        )
     wallet_key = models.ForeignKey(Wallet, on_delete=models.CASCADE)
-    transaction_type = models.CharField(max_length=10, choices=[('CREDIT', 'Received + '), ('DEBIT', 'Withdrawn - ')])
-    tickets = models.CharField(max_length=12, choices=[('SOLVED', 'Solved'), ('RAISED', 'Raised')], blank=True)
+    transaction_type = models.CharField(
+        max_length=10, 
+        choices=[('CREDIT', 'Received + '), ('DEBIT', 'Withdrawn - ')]
+        )
+    tickets = models.CharField(
+        max_length=12, 
+        choices=[('SOLVED', 'Solved'), ('RAISED', 'Raised')], 
+        blank=True
+        )
     amount = models.DecimalField(max_digits=8, decimal_places=2)
     note = models.TextField(blank=True, null=True)
-    status = models.CharField(max_length=50, choices=[
-        ('PENDING', 'Pending'), ('COMPLETED', 'Completed'), ('FAILED', 'Failed'), ("BLOCKED", "Blocked")])
+    status = models.CharField(
+        max_length=50, 
+        choices=[
+            ('PENDING', 'Pending'), 
+            ('COMPLETED', 'Completed'), 
+            ('FAILED', 'Failed'), 
+            ("BLOCKED", "Blocked")
+            ]
+        )
     currency = models.CharField(max_length=30, default="INR")
     transaction_id = models.CharField(max_length=100, blank=True, null=True)
     transaction_date = models.DateField(auto_now_add=True)
-    
-    def _update_account_balance(self, *args, **kwargs):
-        if self.transaction_type == "CREDIT":
-            self.wallet_key.balance+=Decimal(self.amount)
-        elif self.transaction_type == "DEBIT":
-            if self.wallet_key.balance-self.amount < 0:
-                raise Exception (f"you don't have balance for that, current balance is {self.wallet_key.balance}")
-            self.wallet_key.balance -= Decimal(self.amount)
-    
-    @transaction.atomic
-    def save(self, *args, **kwargs):
-        self._update_account_balance()
-        super().save(*args, **kwargs)
-        self.wallet_key.save()
     
     def __str__(self):
         return f"{self.amount} as {self.transaction_type} for {self.wallet_key.user_code}"

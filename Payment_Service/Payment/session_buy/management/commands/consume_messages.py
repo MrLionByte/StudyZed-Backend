@@ -33,16 +33,13 @@ class Command(BaseCommand):
                     # continue
                 else:
                     if msg.error():
-                        print(f"For kafka consumer error : {msg.error}")
                         logger.error(f"Error: {msg.error()}")
                         if msg.error().code() == KafkaError._PARTITION_EOF:
                             logger.error(f"End of partition reached: {msg.topic()} [{msg.partition()}] at offset {msg.offset()}")
                         else:
                             raise KafkaException(msg.error())
                     else:
-                        print(f"For kafka consumer : {str(msg)}")
                         message_value = json.loads(msg.value().decode('utf-8'))
-                        print(f"For kafka consumer after decode : {message_value}")
                         logger.info(f"Received message: {message_value}")
                         session_code = message_value.get('session_code')
 

@@ -1,4 +1,9 @@
-from .views import *
+from .views import (
+    GetPaymentOfSessionView,
+    RejectSessionPaymentRefund,
+    TotalRevenueView,
+    TestAPIRequestView
+                    )
 from django.urls import path
 
 urlpatterns = [

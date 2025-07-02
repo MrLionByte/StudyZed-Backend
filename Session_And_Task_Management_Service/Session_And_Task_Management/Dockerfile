@@ -14,8 +14,11 @@ RUN chmod +x /app/run.py && \
 
 COPY . /app
 
+COPY start.sh /start.sh
+RUN chmod +x /start.sh
+
 RUN mkdir -p /app/logs
 
 EXPOSE 8000
 
-CMD ["python", "/app/run.py"]
+CMD ["/start.sh"]

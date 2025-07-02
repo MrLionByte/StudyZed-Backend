@@ -7,10 +7,7 @@ python manage.py makemigrations
 python manage.py migrate
 
 # Start Gunicorn in background
-gunicorn Payment.wsgi:application --bind 0.0.0.0:8008 &
-
-# Start consumer
-python manage.py consume_messages
+gunicorn Session_And_Task_Management.wsgi:application --bind 0.0.0.0:8009 &
 
 # Wait for background processes
 wait

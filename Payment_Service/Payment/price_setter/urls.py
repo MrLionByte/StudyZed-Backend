@@ -1,4 +1,7 @@
-from .views import *
+from .views import (
+    GetAllSubscriptionAmountsView,
+    ChangeSubscriptionAmountView
+    )
 from django.urls import path
 
 urlpatterns = [

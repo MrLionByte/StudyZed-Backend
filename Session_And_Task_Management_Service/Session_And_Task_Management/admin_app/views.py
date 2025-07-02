@@ -60,15 +60,13 @@ class RejectSessionView(generics.UpdateAPIView):
             }
         
             try:
-                payment_service_url = "http://payment_management:8000/payment-admin/refund-session/"
+                payment_service_url = "http://payment-service.studyzed.svc.cluster.local:8008/payment-admin/refund-session/"
                 
                 response = requests.post(payment_service_url, json=payload, timeout=10)
-                print("Payment Service Response all :", response)
-                print("Payment Service Response:", response.status_code, response.json())
+                logger.info("Payment Service Response:", response.status_code, response.json())
             except Exception as e:
-                print("Failed to contact Payment Service:", str(e))
-
-        
+                logger.error("Failed to contact Payment Service:", str(e))
+    
         return Response(
             {
                 "message": f"Successfully rejected session {session.session_name}",

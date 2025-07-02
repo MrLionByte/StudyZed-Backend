@@ -1,5 +1,11 @@
-from .views import StripeWalletTransactionView, StudentWalletView, TutorWalletView, stripe_webhook_wallet
+from .views import (
+    StripeWalletTransactionView,
+    StudentWalletView,
+    TutorWalletView,
+    stripe_webhook_wallet
+    )
 from django.urls import path
+
 
 urlpatterns = [
     path('student-wallet/', StudentWalletView.as_view()),

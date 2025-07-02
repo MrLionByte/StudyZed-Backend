@@ -44,3 +44,4 @@ django-structlog==9.1.1
 python-json-logger==3.3.0
 prometheus-client==0.21.1
 structlog==25.2.0
+gunicorn==23.0.0

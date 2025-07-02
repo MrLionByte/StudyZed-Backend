@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Run makemigrations
 python manage.py makemigrations
@@ -7,10 +7,7 @@ python manage.py makemigrations
 python manage.py migrate
 
 # Start Gunicorn in background
-gunicorn Payment.wsgi:application --bind 0.0.0.0:8008 &
-
-# Start consumer
-python manage.py consume_messages
+gunicorn Usermanagement.wsgi:application --bind 0.0.0.0:8005 &
 
 # Wait for background processes
 wait

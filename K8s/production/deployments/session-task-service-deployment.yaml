@@ -15,9 +15,7 @@ spec:
     spec:
       containers:
       - name: session-and-task-service
-        # image: mrlionbyte/session-and-task-management:v1.4.2.6
-        image: mrlionbyte/session-and-task-management:v1.4.2.7
-        # image: mrlionbyte/session-and-task-management:v1.4.2.1
+        image: mrlionbyte/session-and-task-management:v1.5.0.2
         ports:
           - containerPort: 8009
         envFrom:
