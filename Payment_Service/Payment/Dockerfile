@@ -7,10 +7,9 @@ ENV PYTHONUNBUFFERED 1
 
 WORKDIR /app
 
-COPY run.py requirements.txt /app/
+COPY requirements.txt /app/
 
-RUN chmod +x /app/run.py && \
-    pip install -r requirements.txt
+RUN pip install -r requirements.txt
 
 COPY . /app
 

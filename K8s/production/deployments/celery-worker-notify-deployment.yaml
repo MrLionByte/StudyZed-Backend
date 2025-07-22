@@ -31,7 +31,7 @@ spec:
         - name: DJANGO_SETTINGS_MODULE
           value: "Notification.settings"
         - name: FIREBASE_CREDENTIALS_PATH
-          value: "/app/firebase/study-zed-notifications-firebase.json"
+          value: "/app/firebase/key.json"
         - name: SECRET_KEY
           valueFrom:
             secretKeyRef:

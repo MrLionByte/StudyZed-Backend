@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: payment-service
-        image: mrlionbyte/payment-management:v1.5.0.11
+        image: mrlionbyte/payment-management:v1.5.1.1
         ports:
           - containerPort: 8008
         envFrom:

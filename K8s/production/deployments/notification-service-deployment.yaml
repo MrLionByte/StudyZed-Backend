@@ -29,7 +29,7 @@ spec:
         - name: KAFKA_BOOTSTRAP_SERVERS
           value: "kafka:9092"
         - name: FIREBASE_CREDENTIALS_PATH
-          value: "/app/firebase/study-zed-notifications-firebase.json" 
+          value: "/app/firebase/key.json"
         volumeMounts:
           - name: firebase-secret
             mountPath: "/app/firebase"

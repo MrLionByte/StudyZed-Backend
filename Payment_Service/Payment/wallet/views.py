@@ -1,5 +1,7 @@
 import logging
 from django.shortcuts import render
+from django.db import transaction, IntegrityError
+
 from .models import Wallet, WalletTransactions
 from rest_framework import generics, status, pagination
 from rest_framework.views import APIView
@@ -151,29 +153,50 @@ def stripe_webhook_wallet(request):
         )
     
         if event['type'] == 'checkout.session.completed':
-            
             session = event['data']['object']
+            metadata = session.get("metadata", {})
+            
+            if metadata.get("type") != "wallet":
+                logger.info("Non-wallet Stripe webhook received; ignored.")
+                return JsonResponse({'status': 'ignored'}, status=200)
+            
+            user_code = metadata.get("user_code")
+          
             session_id = session['id']
             payment_intent = session.get('payment_intent')
+            
+            try:
+                wallet_key = Wallet.objects.get(user_code=user_code)
+            except Wallet.DoesNotExist:
+                logger.warning(f"Wallet not found for user_code: {user_code}")
+                return JsonResponse({'status': 'wallet_not_found'}, status=400)
 
             if payment_intent:
                 payment = stripe.PaymentIntent.retrieve(payment_intent)
                 user_code = session['metadata']['user_code']
-                wallet_key = Wallet.objects.get(user_code=user_code)
 
                 currency = session['metadata'].get('currency', 'inr')
                 amount = session['amount_total'] / 100  # Convert from cents to dollars
                 
-                WalletTransactions.objects.create(
-                    wallet_key=wallet_key,
-                    transaction_type="CREDIT",
-                    amount=amount,
-                    transaction_id=session_id,
-                    currency=currency,
-                    status="COMPLETED"
-                )
-                logger.info(f"Payment successful: {payment_intent}")
-
+                try:
+                    with transaction.atomic():
+                        if WalletTransactions.objects.select_for_update().filter(transaction_id=session_id).exists():
+                            logger.info(f"Duplicate transaction detected: {session_id}")
+                            return JsonResponse({'status': 'duplicate_ignored'}, status=200)
+                
+                        WalletTransactions.objects.create(
+                            wallet_key=wallet_key,
+                            transaction_type="CREDIT",
+                            amount=amount,
+                            transaction_id=session_id,
+                            currency=currency,
+                            status="COMPLETED"
+                        )
+                        logger.info(f"Payment successful: {payment_intent}")
+                except IntegrityError as e:
+                    logger.warning(f"IntegrityError: Possibly duplicate transaction: {session_id}")
+                    return JsonResponse({'status': 'duplicate_handled'}, status=200)
+            
             else:
                 logger.warning("Payment intent is not available.")
 
